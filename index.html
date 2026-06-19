@@ -1,691 +1,876 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SA Grand Loop — Jan 2027</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg:#0C0C0C; --surface:#141414; --border:#1E1E1E; --faint:#252220;
-      --gold:#C8A86B; --gold-dim:rgba(200,168,107,0.10); --gold-line:rgba(200,168,107,0.28);
-      --text:#F0EDE8; --muted:#5A5550;
-      --c-dep:#7A7570; --c-ct:#6B9BB8; --c-gr:#5A8C6A; --c-dbn:#C8A86B; --c-berg:#8A7A9A;
-    }
-    html { scroll-behavior: smooth; }
-    body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
-      font-weight:300; font-size:14px; line-height:1.7; -webkit-font-smoothing:antialiased; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SA Grand Loop &mdash; Jan 2027</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070707;--s1:#0E0E0C;--s2:#141410;--border:#1C1C18;
+  --gold:#C8A86B;--gold-d:rgba(200,168,107,.09);--gold-b:rgba(200,168,107,.22);
+  --text:#EDEAE4;--t2:#9A9590;--t3:#4A4640;
+  --c-dep:#7A7570;--c-ct:#6B9BB8;--c-gr:#5A8C6A;--c-dbn:#C8A86B;--c-berg:#8A7A9A;
+  --ease:cubic-bezier(.25,.46,.45,.94);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-weight:300;font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased;cursor:none;overflow-x:hidden}
+@media(max-width:640px){body{cursor:auto}}
 
-    /* HERO */
-    .hero { position:relative; min-height:100svh; display:flex; flex-direction:column;
-      justify-content:flex-end; padding:clamp(32px,6vw,80px); overflow:hidden; }
-    .hero-bg { position:absolute; inset:0; width:100%; height:100%;
-      object-fit:cover; object-position:center; opacity:0.4; filter:saturate(0.55); }
-    .hero-overlay { position:absolute; inset:0;
-      background:linear-gradient(to top,#0C0C0C 0%,rgba(12,12,12,0.55) 50%,rgba(12,12,12,0.1) 100%); }
-    .hero-content { position:relative; z-index:2; }
-    .hero-eyebrow { font-size:10px; font-weight:500; letter-spacing:0.22em;
-      text-transform:uppercase; color:var(--gold); margin-bottom:24px; }
-    .hero h1 { font-family:'Cormorant Garamond',serif; font-weight:300;
-      font-size:clamp(52px,10vw,116px); line-height:0.9; letter-spacing:-0.02em; margin-bottom:44px; }
-    .hero h1 em { font-style:italic; color:var(--gold); }
-    .hero-stats { display:flex; gap:36px; flex-wrap:wrap; }
-    .hero-stat { display:flex; flex-direction:column; gap:4px; }
-    .hs-v { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:400; line-height:1; }
-    .hs-l { font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); }
-    .hero-side { position:absolute; top:clamp(28px,5vw,60px); right:clamp(28px,5vw,60px);
-      font-size:10px; letter-spacing:0.14em; color:var(--muted); text-transform:uppercase;
-      writing-mode:vertical-rl; transform:rotate(180deg); z-index:2; }
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;transition:opacity .6s var(--ease)}
+#loader.gone{opacity:0;pointer-events:none}
+.ld-word{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,44px);font-weight:300;letter-spacing:.08em;color:var(--text)}
+.ld-word em{color:var(--gold);font-style:italic}
+.ld-bar{width:200px;height:1px;background:var(--border);overflow:hidden}
+.ld-fill{height:100%;background:var(--gold);width:0;animation:ldFill 1.1s var(--ease) forwards}
+@keyframes ldFill{to{width:100%}}
 
-    /* PHASE NAV */
-    .phase-nav { display:grid; grid-template-columns:repeat(5,1fr); border-bottom:1px solid var(--border); }
-    .pn-block { padding:18px clamp(10px,2vw,26px); border-right:1px solid var(--border);
-      position:relative; cursor:pointer; transition:background 0.2s; }
-    .pn-block:hover { background:var(--surface); }
-    .pn-block:last-child { border-right:none; }
-    .pn-block::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
-    .pn-block[data-p="dep"]::before  { background:var(--c-dep); }
-    .pn-block[data-p="ct"]::before   { background:var(--c-ct); }
-    .pn-block[data-p="gr"]::before   { background:var(--c-gr); }
-    .pn-block[data-p="dbn"]::before  { background:var(--c-dbn); }
-    .pn-block[data-p="berg"]::before { background:var(--c-berg); }
-    .pn-name { font-size:10px; font-weight:500; letter-spacing:0.15em;
-      text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
-    .pn-days { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; }
+/* CURSOR */
+#cur{position:fixed;width:8px;height:8px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:8888;transform:translate(-50%,-50%);transition:transform .15s var(--ease),opacity .2s;mix-blend-mode:difference}
+#cur-ring{position:fixed;width:32px;height:32px;border:1px solid rgba(200,168,107,.4);border-radius:50%;pointer-events:none;z-index:8887;transform:translate(-50%,-50%);transition:transform .35s var(--ease),width .3s,height .3s,opacity .2s}
+#cur.hovering{transform:translate(-50%,-50%) scale(2.5)}
+#cur-ring.hovering{width:48px;height:48px;border-color:rgba(200,168,107,.2)}
 
-    /* MAP */
-    .map-section { position:relative; height:580px; border-bottom:1px solid var(--border); }
-    #map { width:100%; height:100%; background:#0C0C0C; }
-    .map-legend { position:absolute; bottom:20px; left:20px; z-index:999;
-      background:rgba(12,12,12,0.88); border:1px solid var(--border);
-      backdrop-filter:blur(14px); padding:14px 18px; }
-    .ml-title { font-size:9px; letter-spacing:0.2em; text-transform:uppercase;
-      color:var(--muted); margin-bottom:10px; }
-    .ml-item { display:flex; align-items:center; gap:10px; font-size:11px;
-      color:var(--text); margin-bottom:6px; }
-    .ml-item:last-child { margin-bottom:0; }
-    .ml-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-    .map-hint { position:absolute; top:16px; right:16px; z-index:999;
-      font-size:10px; letter-spacing:0.1em; color:var(--muted);
-      background:rgba(12,12,12,0.7); padding:6px 12px; border:1px solid var(--border); }
+/* PROGRESS */
+#prog{position:fixed;top:0;left:0;height:2px;background:var(--gold);z-index:8000;width:0;transition:width .05s linear}
 
-    /* Leaflet overrides */
-    .leaflet-popup-content-wrapper { background:#141414; border:1px solid #2A2620;
-      border-radius:2px; color:var(--text); box-shadow:0 12px 40px rgba(0,0,0,0.75); }
-    .leaflet-popup-tip { background:#141414; }
-    .leaflet-popup-content { margin:0; font-family:'Inter',sans-serif; }
-    .leaflet-container a.leaflet-popup-close-button { color:var(--muted); top:8px; right:10px; }
-    .leaflet-bar a { background:#141414; border-color:var(--border); color:var(--text); }
-    .leaflet-bar a:hover { background:#252220; }
-    .leaflet-control-attribution { background:rgba(12,12,12,0.7) !important; color:var(--muted) !important; font-size:9px !important; }
-    .leaflet-control-attribution a { color:var(--muted) !important; }
-    .pop-inner { padding:14px 16px; min-width:180px; max-width:240px; }
-    .pop-day { font-size:9px; letter-spacing:0.18em; text-transform:uppercase;
-      color:var(--gold); display:block; margin-bottom:6px; }
-    .pop-name { font-family:'Cormorant Garamond',serif; font-size:19px;
-      font-weight:400; line-height:1.1; margin-bottom:7px; }
-    .pop-note { font-size:11px; color:var(--muted); line-height:1.55; }
+/* HERO */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(32px,6vw,80px);overflow:hidden}
+.hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;opacity:.38;filter:saturate(.5) brightness(.9);transform:scale(1.04);transition:transform 8s ease}
+.hero-bg.loaded{transform:scale(1)}
+.hero-grain{position:absolute;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");background-size:200px 200px;pointer-events:none}
+.hero-ov{position:absolute;inset:0;background:linear-gradient(to top,#070707 0%,rgba(7,7,7,.6) 45%,rgba(7,7,7,.08) 100%)}
+.hero-side{position:absolute;top:clamp(28px,5vw,56px);right:clamp(28px,5vw,56px);font-size:10px;letter-spacing:.18em;color:var(--t3);text-transform:uppercase;writing-mode:vertical-rl;transform:rotate(180deg);z-index:2}
+.hero-content{position:relative;z-index:2}
+.hero-eyebrow{font-size:10px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:28px;opacity:0;transform:translateY(12px);transition:opacity .8s var(--ease) .3s,transform .8s var(--ease) .3s}
+.hero-eyebrow.vis{opacity:1;transform:none}
+.hero h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(56px,11vw,130px);line-height:.88;letter-spacing:-.02em;margin-bottom:48px;opacity:0;transform:translateY(20px);transition:opacity .9s var(--ease) .5s,transform .9s var(--ease) .5s}
+.hero h1.vis{opacity:1;transform:none}
+.hero h1 em{font-style:italic;color:var(--gold)}
+.hero-stats{display:flex;gap:40px;flex-wrap:wrap;opacity:0;transform:translateY(16px);transition:opacity .8s var(--ease) .8s,transform .8s var(--ease) .8s}
+.hero-stats.vis{opacity:1;transform:none}
+.hstat{display:flex;flex-direction:column;gap:5px}
+.hstat-v{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:400;line-height:1}
+.hstat-l{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3)}
+.scroll-hint{position:absolute;bottom:clamp(28px,4vw,48px);left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:.4}
+.scroll-hint span{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--t2)}
+.scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--gold),transparent);animation:scrollDrop 2s ease infinite}
+@keyframes scrollDrop{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 
-    /* TIMELINE */
-    .tl-wrap { max-width:900px; margin:0 auto; padding:clamp(48px,7vw,100px) clamp(20px,5vw,60px); }
-    .phase-group { margin-bottom:88px; }
-    .ph-hdr { display:flex; align-items:center; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--border); }
-    .ph-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-    .phase-group[data-p="dep"]  .ph-dot { background:var(--c-dep); }
-    .phase-group[data-p="ct"]   .ph-dot { background:var(--c-ct); }
-    .phase-group[data-p="gr"]   .ph-dot { background:var(--c-gr); }
-    .phase-group[data-p="dbn"]  .ph-dot { background:var(--c-dbn); }
-    .phase-group[data-p="berg"] .ph-dot { background:var(--c-berg); }
-    .ph-title { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; }
-    .ph-range { margin-left:auto; font-size:10px; letter-spacing:0.15em;
-      text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+/* PHASE NAV (sticky) */
+.phase-nav{position:sticky;top:0;z-index:500;background:rgba(7,7,7,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);transition:transform .3s var(--ease)}
+.pn{padding:14px clamp(8px,2vw,24px);border-right:1px solid var(--border);cursor:pointer;position:relative;transition:background .2s;overflow:hidden}
+.pn:last-child{border-right:none}
+.pn::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;transform:scaleX(0);transition:transform .3s var(--ease);transform-origin:left}
+.pn:hover::after{transform:scaleX(1)}
+.pn[data-p="dep"]::after{background:var(--c-dep)}.pn[data-p="dep"]:hover{background:rgba(122,117,112,.06)}
+.pn[data-p="ct"]::after{background:var(--c-ct)}.pn[data-p="ct"]:hover{background:rgba(107,155,184,.06)}
+.pn[data-p="gr"]::after{background:var(--c-gr)}.pn[data-p="gr"]:hover{background:rgba(90,140,106,.06)}
+.pn[data-p="dbn"]::after{background:var(--c-dbn)}.pn[data-p="dbn"]:hover{background:rgba(200,168,107,.06)}
+.pn[data-p="berg"]::after{background:var(--c-berg)}.pn[data-p="berg"]:hover{background:rgba(138,122,154,.06)}
+.pn-label{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin-bottom:2px;transition:color .2s}
+.pn:hover .pn-label{color:var(--t2)}
+.pn-title{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:300;color:var(--text)}
 
-    /* Phase banner image */
-    .ph-banner { position:relative; height:240px; overflow:hidden; margin-bottom:40px; }
-    .ph-banner img { width:100%; height:100%; object-fit:cover; object-position:center;
-      filter:saturate(0.6) brightness(0.72); transition:filter 0.4s; display:block; }
-    .ph-banner:hover img { filter:saturate(0.85) brightness(0.85); }
-    .ph-banner-cap { position:absolute; bottom:14px; left:18px; font-size:10px;
-      letter-spacing:0.14em; text-transform:uppercase; color:rgba(240,237,232,0.45); }
+/* MAP */
+.map-wrap{position:relative;height:580px;border-bottom:1px solid var(--border)}
+#map{width:100%;height:100%;background:var(--bg)}
+.map-ui{position:absolute;bottom:20px;left:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.map-legend{background:rgba(7,7,7,.88);border:1px solid var(--border);backdrop-filter:blur(16px);padding:14px 18px}
+.ml-t{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
+.ml-row{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--t2);margin-bottom:5px}
+.ml-row:last-child{margin-bottom:0}
+.ml-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.map-hint{background:rgba(7,7,7,.75);border:1px solid var(--border);padding:6px 12px;font-size:10px;letter-spacing:.1em;color:var(--t3)}
+.leaflet-popup-content-wrapper{background:#111110;border:1px solid #252520;border-radius:2px;color:var(--text);box-shadow:0 16px 48px rgba(0,0,0,.8)}
+.leaflet-popup-tip{background:#111110}
+.leaflet-popup-content{margin:0;font-family:'Inter',sans-serif}
+.leaflet-container a.leaflet-popup-close-button{color:var(--t3);top:8px;right:10px;font-size:18px}
+.leaflet-bar a{background:#111110!important;border-color:var(--border)!important;color:var(--text)!important}
+.leaflet-bar a:hover{background:#1c1c18!important}
+.leaflet-control-attribution{background:rgba(7,7,7,.7)!important;color:var(--t3)!important;font-size:9px!important}
+.leaflet-control-attribution a{color:var(--t3)!important}
+.pop-in{padding:14px 16px;min-width:190px;max-width:250px}
+.pop-day{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px}
+.pop-name{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;line-height:1.1;margin-bottom:8px}
+.pop-note{font-size:11px;color:var(--t2);line-height:1.55}
 
-    /* Day card */
-    .day-card { display:grid; grid-template-columns:44px 1fr; gap:0 18px; }
-    .dc-left { display:flex; flex-direction:column; align-items:center; padding-top:22px; }
-    .dc-node { width:10px; height:10px; border-radius:50%; flex-shrink:0; background:var(--faint);
-      border:1px solid var(--muted); z-index:1; cursor:pointer;
-      transition:background 0.2s, border-color 0.2s, transform 0.2s; }
-    .day-card:hover .dc-node { background:var(--gold); border-color:var(--gold); transform:scale(1.35); }
-    .dc-thread { width:1px; flex:1; background:var(--border); margin-top:4px; min-height:24px; }
-    .day-card:last-child .dc-thread { display:none; }
-    .dc-body { padding-bottom:0; }
-    .dc-head { display:flex; align-items:baseline; gap:10px; padding-top:20px; flex-wrap:wrap; }
-    .dc-num { font-size:10px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); }
-    .dc-date { font-size:10px; color:var(--muted); opacity:0.5; }
-    .dc-loc { font-family:'Cormorant Garamond',serif; font-size:clamp(20px,3.2vw,28px);
-      font-weight:400; line-height:1.1; margin:8px 0 10px; }
-    .dc-loc .arr { color:var(--gold); margin:0 5px; font-style:normal; font-weight:300; }
-    .dc-note { font-size:13px; color:var(--muted); line-height:1.65; max-width:560px; margin-bottom:12px; }
+/* TIMELINE */
+.tl{max-width:1000px;margin:0 auto;padding:clamp(56px,8vw,120px) clamp(20px,5vw,60px)}
 
-    /* Day image */
-    .dc-img { position:relative; height:200px; overflow:hidden; margin-bottom:14px; border:1px solid var(--border); }
-    .dc-img img { width:100%; height:100%; object-fit:cover; object-position:center;
-      filter:saturate(0.6) brightness(0.72); transition:filter 0.4s, transform 0.5s; display:block; }
-    .day-card:hover .dc-img img { filter:saturate(0.88) brightness(0.86); transform:scale(1.03); }
+/* Phase block */
+.pg{margin-bottom:100px}
+.pg-hdr{margin-bottom:0;padding-bottom:20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;gap:20px}
+.pg-hdr-left{flex:1}
+.pg-eyebrow{font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+.pg[data-p="dep"]  .pg-eyebrow{color:var(--c-dep)}
+.pg[data-p="ct"]   .pg-eyebrow{color:var(--c-ct)}
+.pg[data-p="gr"]   .pg-eyebrow{color:var(--c-gr)}
+.pg[data-p="dbn"]  .pg-eyebrow{color:var(--c-dbn)}
+.pg[data-p="berg"] .pg-eyebrow{color:var(--c-berg)}
+.pg-title{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,5vw,52px);font-weight:300;letter-spacing:-.01em;line-height:1}
+.pg-range{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--t3);white-space:nowrap;padding-bottom:4px}
 
-    .dc-tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:32px; }
-    .tg { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; padding:3px 10px; border-radius:2px; }
-    .tg-gold { color:var(--gold); background:var(--gold-dim); border:1px solid var(--gold-line); }
-    .tg-grey { color:var(--muted); background:var(--surface); border:1px solid var(--border); }
+/* Phase hero image */
+.ph-img{position:relative;height:260px;overflow:hidden;margin-bottom:48px}
+.ph-img img{width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.55) brightness(.7);transition:filter .5s var(--ease),transform 6s ease}
+.ph-img:hover img{filter:saturate(.8) brightness(.82);transform:scale(1.04)}
+.ph-img-cap{position:absolute;bottom:14px;left:18px;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(237,234,228,.4)}
 
-    /* FOOTER */
-    footer { border-top:1px solid var(--border);
-      padding:clamp(28px,5vw,56px) clamp(20px,5vw,60px);
-      display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
-    .ft-route { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; color:var(--muted); }
-    .ft-route span { color:var(--gold); }
-    .ft-note { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); opacity:0.4; }
+/* Day card */
+.dc{display:grid;grid-template-columns:56px 1fr;gap:0 24px;position:relative}
+.dc-left{display:flex;flex-direction:column;align-items:center;padding-top:28px}
+.dc-node{width:11px;height:11px;border-radius:50%;flex-shrink:0;background:var(--s2);border:1px solid var(--t3);cursor:pointer;z-index:1;transition:background .25s,border-color .25s,transform .25s var(--ease)}
+.dc:hover .dc-node{background:var(--gold);border-color:var(--gold);transform:scale(1.4)}
+.dc-line{width:1px;flex:1;background:var(--border);margin-top:5px;min-height:28px}
+.dc:last-child .dc-line{display:none}
+.dc-body{padding-bottom:0}
+.dc-meta{display:flex;align-items:baseline;gap:12px;padding-top:24px;flex-wrap:wrap}
+.dc-num{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--t3)}
+.dc-date{font-size:9px;color:var(--t3);opacity:.6}
+.dc-loc{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,3.5vw,32px);font-weight:400;line-height:1.05;margin:10px 0 12px}
+.dc-loc .arr{color:var(--gold);margin:0 6px;font-style:normal;font-weight:300}
+.dc-note{font-size:13px;color:var(--t2);line-height:1.7;max-width:600px;margin-bottom:18px}
 
-    /* RESPONSIVE */
-    @media (max-width:640px) {
-      .phase-nav { grid-template-columns:repeat(3,1fr); }
-      .pn-block:nth-child(n+4) { border-top:1px solid var(--border); }
-      .pn-block:nth-child(3) { border-right:none; }
-      .ph-range { display:none; }
-      .map-legend { display:none; }
-      .map-hint { display:none; }
-      .day-card { grid-template-columns:32px 1fr; gap:0 10px; }
-    }
-    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none !important; } }
-  </style>
+/* Day image */
+.dc-img{position:relative;height:220px;overflow:hidden;border:1px solid var(--border);margin-bottom:20px}
+.dc-img img{width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.55) brightness(.7);transition:filter .4s var(--ease),transform .5s var(--ease);display:block}
+.dc:hover .dc-img img{filter:saturate(.85) brightness(.85);transform:scale(1.04)}
+
+/* Activities strip */
+.acts-label{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:12px}
+.acts-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.acts-strip::-webkit-scrollbar{display:none}
+.act{flex-shrink:0;width:168px;background:var(--s1);border:1px solid var(--border);padding:14px;cursor:default;transition:border-color .2s,background .2s}
+.act:hover{border-color:var(--gold-b);background:var(--s2)}
+.act-icon{font-size:18px;margin-bottom:8px;line-height:1}
+.act-name{font-size:12px;font-weight:400;color:var(--text);line-height:1.3;margin-bottom:5px}
+.act-tip{font-size:10px;color:var(--t3);line-height:1.4}
+
+/* Photographer's note */
+.photo-note{border-left:2px solid var(--gold-b);padding:14px 18px;margin:20px 0 24px;background:var(--gold-d)}
+.pn-lbl{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:8px}
+.photo-note p{font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;color:var(--t2);line-height:1.65;font-weight:300}
+
+/* Tags */
+.dc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:44px}
+.tg{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:2px}
+.tg-gold{color:var(--gold);background:var(--gold-d);border:1px solid var(--gold-b)}
+.tg-grey{color:var(--t3);background:var(--s1);border:1px solid var(--border)}
+
+/* SCROLL ANIMATION */
+.anim{opacity:0;transform:translateY(28px);transition:opacity .75s var(--ease),transform .75s var(--ease)}
+.anim.vis{opacity:1;transform:none}
+.anim-d1{transition-delay:.08s}.anim-d2{transition-delay:.16s}.anim-d3{transition-delay:.24s}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:clamp(32px,5vw,64px) clamp(20px,5vw,60px);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+.ft-r{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--t3);letter-spacing:.04em}
+.ft-r span{color:var(--gold)}
+.ft-n{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--t3);opacity:.4}
+
+@media(max-width:680px){
+  .phase-nav{grid-template-columns:repeat(3,1fr)}
+  .pn:nth-child(n+4){border-top:1px solid var(--border)}
+  .pn:nth-child(3){border-right:none}
+  .pg-range{display:none}
+  .map-legend{display:none}
+  .dc{grid-template-columns:32px 1fr;gap:0 12px}
+  .act{width:148px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 
+<div id="loader">
+  <div class="ld-word">SA Grand <em>Loop</em></div>
+  <div class="ld-bar"><div class="ld-fill"></div></div>
+</div>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<div id="prog"></div>
+
+<!-- HERO -->
 <header class="hero">
-  <img class="hero-bg"
-    src="https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=1600&q=80&auto=format&fit=crop"
-    alt="Cape Town aerial" loading="eager" onerror="this.style.display='none'">
-  <div class="hero-overlay"></div>
-  <div class="hero-side">Jan – Feb 2027</div>
+  <img class="hero-bg" src="https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=1800&q=80&auto=format&fit=crop" alt="Cape Town" loading="eager" onerror="this.style.display='none'">
+  <div class="hero-grain"></div>
+  <div class="hero-ov"></div>
+  <div class="hero-side">Jan &ndash; Feb 2027</div>
   <div class="hero-content">
     <p class="hero-eyebrow">South Africa Grand Loop &mdash; Road Trip for Two</p>
     <h1>17 Days.<br><em>One Loop.</em><br>Every Terrain.</h1>
     <div class="hero-stats">
-      <div class="hero-stat"><span class="hs-v">Jan 27</span><span class="hs-l">Departure</span></div>
-      <div class="hero-stat"><span class="hs-v">17</span><span class="hs-l">Days</span></div>
-      <div class="hero-stat"><span class="hs-v">~5,500</span><span class="hs-l">Kilometres</span></div>
-      <div class="hero-stat"><span class="hs-v">5</span><span class="hs-l">Regions</span></div>
-      <div class="hero-stat"><span class="hs-v">2</span><span class="hs-l">Travellers</span></div>
+      <div class="hstat"><span class="hstat-v" data-count="27" data-prefix="Jan ">Jan 27</span><span class="hstat-l">Departure</span></div>
+      <div class="hstat"><span class="hstat-v" data-count="17">17</span><span class="hstat-l">Days</span></div>
+      <div class="hstat"><span class="hstat-v" data-count="5500" data-prefix="~" data-suffix=" km">~5,500 km</span><span class="hstat-l">Total Distance</span></div>
+      <div class="hstat"><span class="hstat-v" data-count="5">5</span><span class="hstat-l">Regions</span></div>
+      <div class="hstat"><span class="hstat-v" data-count="22">22</span><span class="hstat-l">Key Stops</span></div>
     </div>
   </div>
+  <div class="scroll-hint"><span>Scroll</span><div class="scroll-line"></div></div>
 </header>
 
+<!-- PHASE NAV -->
 <nav class="phase-nav">
-  <div class="pn-block" data-p="dep" onclick="scroll2('sec-dep')">
-    <div class="pn-name">Departure</div><div class="pn-days">Days 1–2</div></div>
-  <div class="pn-block" data-p="ct" onclick="scroll2('sec-ct')">
-    <div class="pn-name">Cape Town</div><div class="pn-days">Days 3–6</div></div>
-  <div class="pn-block" data-p="gr" onclick="scroll2('sec-gr')">
-    <div class="pn-name">Garden Route</div><div class="pn-days">Days 7–10</div></div>
-  <div class="pn-block" data-p="dbn" onclick="scroll2('sec-dbn')">
-    <div class="pn-name">Durban + KZN</div><div class="pn-days">Days 11–14</div></div>
-  <div class="pn-block" data-p="berg" onclick="scroll2('sec-berg')">
-    <div class="pn-name">Drakensberg</div><div class="pn-days">Days 15–17</div></div>
+  <div class="pn" data-p="dep" onclick="go('dep')"><div class="pn-label">Phase 01</div><div class="pn-title">Departure</div></div>
+  <div class="pn" data-p="ct"  onclick="go('ct')"> <div class="pn-label">Phase 02</div><div class="pn-title">Cape Town</div></div>
+  <div class="pn" data-p="gr"  onclick="go('gr')"> <div class="pn-label">Phase 03</div><div class="pn-title">Garden Route</div></div>
+  <div class="pn" data-p="dbn" onclick="go('dbn')"><div class="pn-label">Phase 04</div><div class="pn-title">Durban + KZN</div></div>
+  <div class="pn" data-p="berg" onclick="go('berg')"><div class="pn-label">Phase 05</div><div class="pn-title">Drakensberg</div></div>
 </nav>
 
-<section class="map-section">
+<!-- MAP -->
+<section class="map-wrap">
   <div id="map"></div>
-  <div class="map-legend">
-    <div class="ml-title">Route Phases</div>
-    <div class="ml-item"><div class="ml-dot" style="background:var(--c-dep)"></div>Karoo / Departure</div>
-    <div class="ml-item"><div class="ml-dot" style="background:var(--c-ct)"></div>Cape Town</div>
-    <div class="ml-item"><div class="ml-dot" style="background:var(--c-gr)"></div>Garden Route</div>
-    <div class="ml-item"><div class="ml-dot" style="background:var(--c-dbn)"></div>Durban + KZN</div>
-    <div class="ml-item"><div class="ml-dot" style="background:var(--c-berg)"></div>Drakensberg</div>
+  <div class="map-ui">
+    <div class="map-legend">
+      <div class="ml-t">Route Phases</div>
+      <div class="ml-row"><div class="ml-dot" style="background:var(--c-dep)"></div>Karoo / Departure</div>
+      <div class="ml-row"><div class="ml-dot" style="background:var(--c-ct)"></div>Cape Town</div>
+      <div class="ml-row"><div class="ml-dot" style="background:var(--c-gr)"></div>Garden Route</div>
+      <div class="ml-row"><div class="ml-dot" style="background:var(--c-dbn)"></div>Durban + KZN</div>
+      <div class="ml-row"><div class="ml-dot" style="background:var(--c-berg)"></div>Drakensberg</div>
+    </div>
+    <div class="map-hint">Hover markers &middot; Click to lock</div>
   </div>
-  <div class="map-hint">Hover markers &middot; Click to lock</div>
 </section>
 
-<main class="tl-wrap">
+<!-- TIMELINE -->
+<main class="tl">
 
-  <!-- DEPARTURE -->
-  <div class="phase-group" data-p="dep" id="sec-dep">
-    <div class="ph-hdr">
-      <div class="ph-dot"></div>
-      <h2 class="ph-title">Departure &amp; Karoo</h2>
-      <span class="ph-range">Jan 27–28 &middot; 2 Days</span>
+<!-- === PHASE 1: DEPARTURE === -->
+<div class="pg anim" data-p="dep" id="dep">
+  <div class="pg-hdr">
+    <div class="pg-hdr-left">
+      <div class="pg-eyebrow">Phase 01 &mdash; January 27&ndash;28</div>
+      <h2 class="pg-title">Departure &amp; Karoo</h2>
     </div>
-    <div class="ph-banner">
-      <img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1200&q=80&auto=format&fit=crop"
-        alt="Karoo desert landscape" loading="lazy" onerror="this.parentElement.style.background='#1a1208'">
-      <span class="ph-banner-cap">The Karoo &mdash; Northern Cape</span>
-    </div>
+    <span class="pg-range">2 Days &middot; ~1,000 km</span>
+  </div>
 
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 01</span><span class="dc-date">Mon 27 Jan</span></div>
-        <div class="dc-loc">Johannesburg <em class="arr">&#8594;</em> Matjiesfontein</div>
-        <p class="dc-note">Depart before dawn. The N1 south swallows you into the Highveld then flattens dramatically into the Karoo. Overnight in Matjiesfontein — a perfectly preserved Victorian ghost town with zero light pollution. The Milky Way here is extraordinary.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1000&q=80&auto=format&fit=crop"
-            alt="Milky Way stargazing" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~750 km &middot; 7 hrs</span>
-          <span class="tg tg-gold">Karoo Overnight</span>
-          <span class="tg tg-gold">Stargazing</span>
-          <span class="tg tg-gold">Lord Milner Hotel</span>
-        </div>
+  <div class="ph-img anim anim-d1">
+    <img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1400&q=80&auto=format&fit=crop" alt="Karoo landscape" loading="lazy" onerror="this.parentElement.style.background='#1a1208'">
+    <span class="ph-img-cap">The Great Karoo &mdash; Northern Cape</span>
+  </div>
+
+  <!-- Day 1 -->
+  <div class="dc anim anim-d2">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 01</span><span class="dc-date">Mon 27 Jan</span></div>
+      <div class="dc-loc">Johannesburg <em class="arr">&#8594;</em> Matjiesfontein</div>
+      <p class="dc-note">Depart before 5am to beat JHB traffic and watch the Highveld give way to the vast, alien silence of the Karoo. Overnight in Matjiesfontein &mdash; a perfectly preserved Victorian ghost town that time forgot. Zero light pollution. The Southern Milky Way core rises after midnight and stays vivid until 4am.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1000&q=80&auto=format&fit=crop" alt="Milky Way starry night" loading="lazy" onerror="this.parentElement.style.display='none'">
       </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 02</span><span class="dc-date">Tue 28 Jan</span></div>
-        <div class="dc-loc">Matjiesfontein <em class="arr">&#8594;</em> Cape Town</div>
-        <p class="dc-note">A 2.5-hour drive through the dramatic Hex River Valley mountain pass. Into the Mother City by early afternoon. Walk straight to Camps Bay for the first Atlantic sunset — the Twelve Apostles mountains go gold behind you.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1565689157206-0fddef7589a2?w=1000&q=80&auto=format&fit=crop"
-            alt="Mountain pass Hex River Valley" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~250 km &middot; 2.5 hrs</span>
-          <span class="tg tg-gold">Hex River Valley Pass</span>
-          <span class="tg tg-gold">Camps Bay Sunset</span>
-          <span class="tg tg-gold">V&amp;A Waterfront</span>
-        </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127774;</div><div class="act-name">Pre-Dawn Departure</div><div class="act-tip">Leave JHB by 5am &mdash; skip the traffic, hit sunrise on open road</div></div>
+        <div class="act"><div class="act-icon">&#127956;</div><div class="act-name">Three Sisters Stop</div><div class="act-tip">3 solitary koppies rising from the plains &mdash; iconic Karoo photo stop</div></div>
+        <div class="act"><div class="act-icon">&#127968;</div><div class="act-name">Lord Milner Hotel</div><div class="act-tip">Victorian colonial hotel, cold beer, great food &mdash; only place in town</div></div>
+        <div class="act"><div class="act-icon">&#128247;</div><div class="act-name">Matjiesfontein Village Walk</div><div class="act-tip">Old steam train, village museum, colonial architecture, ghost-town vibes</div></div>
+        <div class="act"><div class="act-icon">&#11088;</div><div class="act-name">Milky Way Stargazing</div><div class="act-tip">Set alarm for 2am. Bortle Class 2 skies &mdash; among the darkest in Africa</div></div>
+        <div class="act"><div class="act-icon">&#128247;</div><div class="act-name">Long Exposure Night Shoot</div><div class="act-tip">Old train + Milky Way arch. 16mm, f/2, ISO 3200, 20 sec. Magic.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Bring your widest lens and sturdiest tripod. The galactic core rises from the south-east around midnight and peaks at 2am. The old steam locomotive at the station makes a striking foreground. Shoot between 2&ndash;4am &mdash; the core starts fading after 4:30am.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~750 km &middot; 7 hrs</span>
+        <span class="tg tg-gold">Stargazing</span><span class="tg tg-gold">Victorian Heritage</span><span class="tg tg-gold">Photography</span>
       </div>
     </div>
   </div>
 
-  <!-- CAPE TOWN -->
-  <div class="phase-group" data-p="ct" id="sec-ct">
-    <div class="ph-hdr">
-      <div class="ph-dot"></div>
-      <h2 class="ph-title">Cape Town</h2>
-      <span class="ph-range">Jan 29 – Feb 1 &middot; 4 Days</span>
-    </div>
-    <div class="ph-banner">
-      <img src="https://images.unsplash.com/photo-1576485375217-d6a95e34d043?w=1200&q=80&auto=format&fit=crop"
-        alt="Table Mountain Cape Town" loading="lazy" onerror="this.parentElement.style.background='#0d151f'">
-      <span class="ph-banner-cap">Table Mountain &mdash; Cape Town</span>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 03</span><span class="dc-date">Wed 29 Jan</span></div>
-        <div class="dc-loc">Table Mountain &amp; The City</div>
-        <p class="dc-note">Cable car at opening, or hike — 360° views of Cape Town, Table Bay, and both oceans. Afternoon in Bo-Kaap for the colourful street photography. Long Street for dinner and drinks as the city comes alive.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=1000&q=80&auto=format&fit=crop"
-            alt="Cape Town Table Mountain view" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-gold">Table Mountain</span>
-          <span class="tg tg-gold">Bo-Kaap Street Photography</span>
-          <span class="tg tg-gold">Long Street Nightlife</span>
-        </div>
+  <!-- Day 2 -->
+  <div class="dc anim anim-d3">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 02</span><span class="dc-date">Tue 28 Jan</span></div>
+      <div class="dc-loc">Matjiesfontein <em class="arr">&#8594;</em> Cape Town</div>
+      <p class="dc-note">A 2.5-hour drive through the spectacular Hex River Valley &mdash; vineyards flanked by the Hex River Mountains, one of the most beautiful valleys in South Africa. Into Cape Town by early afternoon. Arrive, drop bags, and walk straight to Camps Bay. The Atlantic at golden hour. Your first night in the Mother City.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1565689157206-0fddef7589a2?w=1000&q=80&auto=format&fit=crop" alt="Hex River Valley mountain pass vineyards" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#9968;</div><div class="act-name">Hex River Valley Pass</div><div class="act-tip">Multiple lay-bys with vineyard and mountain views &mdash; stop at every one</div></div>
+        <div class="act"><div class="act-icon">&#128697;</div><div class="act-name">Paarl Winelands Stop</div><div class="act-tip">Quick detour to Paarl &mdash; KWV Brandy Cellar or Grande Provence</div></div>
+        <div class="act"><div class="act-icon">&#127754;</div><div class="act-name">V&amp;A Waterfront</div><div class="act-tip">Two Oceans Aquarium, harbour seals, craft beer at The Beerhouse</div></div>
+        <div class="act"><div class="act-icon">&#127948;</div><div class="act-name">Sea Point Promenade</div><div class="act-tip">3km oceanfront walk with sea pools &mdash; great intro to CT coastal life</div></div>
+        <div class="act"><div class="act-icon">&#127968;</div><div class="act-name">Camps Bay Sunset</div><div class="act-tip">Twelve Apostles mountain range goes amber behind you at 7:30pm</div></div>
+        <div class="act"><div class="act-icon">&#127829;</div><div class="act-name">Ocean Basket / Bombay</div><div class="act-tip">Long Street dinner &mdash; Ocean Basket for seafood, Bombay for curry</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>The Hex River Valley vineyards are at peak green in January &mdash; lush, full growth against dramatic mountain backdrops. Stop at the Huguenot Tunnel viewpoint before descending. Camps Bay at golden hour: shoot from the southern end of the beach facing north-west &mdash; the mountains frame the sunset perfectly.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~250 km &middot; 2.5 hrs</span>
+        <span class="tg tg-gold">Scenic Drive</span><span class="tg tg-gold">Beach Sunset</span><span class="tg tg-gold">Seafood</span>
       </div>
     </div>
+  </div>
+</div>
 
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 04</span><span class="dc-date">Thu 30 Jan</span></div>
-        <div class="dc-loc">Cape Peninsula Day Trip</div>
-        <p class="dc-note">The greatest coastal drive in Africa. Chapman's Peak — cliffs dropping straight into the Atlantic. Cape Point at the peninsula's tip. Boulders Beach for African penguins on white sand. Bring every lens — this day delivers constantly.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1520250494-c79be5a9ef7e?w=1000&q=80&auto=format&fit=crop"
-            alt="Cape Peninsula coastal road Chapman's Peak" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~150 km loop</span>
-          <span class="tg tg-gold">Chapman's Peak Drive</span>
-          <span class="tg tg-gold">Cape Point NR</span>
-          <span class="tg tg-gold">Boulders Beach Penguins</span>
-        </div>
-      </div>
+<!-- === PHASE 2: CAPE TOWN === -->
+<div class="pg anim" data-p="ct" id="ct">
+  <div class="pg-hdr">
+    <div class="pg-hdr-left">
+      <div class="pg-eyebrow">Phase 02 &mdash; January 29 &ndash; February 1</div>
+      <h2 class="pg-title">Cape Town</h2>
     </div>
+    <span class="pg-range">4 Days &middot; 6 Nights</span>
+  </div>
 
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 05</span><span class="dc-date">Fri 31 Jan</span></div>
-        <div class="dc-loc">Stellenbosch &amp; Franschhoek</div>
-        <p class="dc-note">Into the Cape Winelands. Oak-lined streets, Cape Dutch manor houses, and world-class wine. Stellenbosch wine route in the morning, then Haute Cabrière perched dramatically above Franschhoek valley for an afternoon MCC pairing.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1000&q=80&auto=format&fit=crop"
-            alt="Cape Winelands vineyard Stellenbosch" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-gold">Stellenbosch Wine Route</span>
-          <span class="tg tg-gold">Delaire Graff Estate</span>
-          <span class="tg tg-gold">Haute Cabrière Franschhoek</span>
-          <span class="tg tg-gold">Wine Tram</span>
-        </div>
+  <div class="ph-img anim anim-d1">
+    <img src="https://images.unsplash.com/photo-1576485375217-d6a95e34d043?w=1400&q=80&auto=format&fit=crop" alt="Cape Town Table Mountain" loading="lazy" onerror="this.parentElement.style.background='#0d151f'">
+    <span class="ph-img-cap">Table Mountain &mdash; Cape Town</span>
+  </div>
+
+  <!-- Day 3 -->
+  <div class="dc anim anim-d1">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 03</span><span class="dc-date">Wed 29 Jan</span></div>
+      <div class="dc-loc">Table Mountain &amp; Cape Town City</div>
+      <p class="dc-note">Table Mountain at opening time &mdash; cable car or the Platteklip Gorge hike. 360&deg; views of the city, both oceans, and the full Cape Peninsula. Afternoon in Bo-Kaap for the colourful street photography, then Zeitz MOCAA for contemporary African art. Long Street and Bree Street for the city&rsquo;s best food and nightlife.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=1000&q=80&auto=format&fit=crop" alt="Table Mountain Cape Town view" loading="lazy" onerror="this.parentElement.style.display='none'">
       </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 06</span><span class="dc-date">Sat 1 Feb</span></div>
-        <div class="dc-loc">Cape Town Free Day</div>
-        <p class="dc-note">Slow Camps Bay morning. Kalk Bay in the afternoon — fishing harbour, vintage shops, Kalky's fish and chips on the quay. Signal Hill for golden hour over the city. De Waterkant or Bree Street for nightlife.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1592919505780-303950717480?w=1000&q=80&auto=format&fit=crop"
-            alt="Camps Bay beach Cape Town sunset" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-gold">Camps Bay Beach</span>
-          <span class="tg tg-gold">Kalk Bay Harbour</span>
-          <span class="tg tg-gold">Signal Hill Sunset</span>
-          <span class="tg tg-gold">De Waterkant</span>
-        </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#9968;</div><div class="act-name">Table Mountain Cable Car</div><div class="act-tip">Book online the day before &mdash; Jan queues are 2+ hrs without a booking</div></div>
+        <div class="act"><div class="act-icon">&#127939;</div><div class="act-name">Platteklip Gorge Hike</div><div class="act-tip">2hr hike up, 45min cable car down &mdash; best of both worlds approach</div></div>
+        <div class="act"><div class="act-icon">&#127968;</div><div class="act-name">Bo-Kaap</div><div class="act-tip">Cape Malay Quarter &mdash; colourful houses, spice shops, koeksisters</div></div>
+        <div class="act"><div class="act-icon">&#127760;</div><div class="act-name">Zeitz MOCAA</div><div class="act-tip">Africa&rsquo;s premier contemporary art museum &mdash; stunning converted grain silo</div></div>
+        <div class="act"><div class="act-icon">&#127963;</div><div class="act-name">District Six Museum</div><div class="act-tip">Powerful apartheid-era history. 2 hrs. Essential Cape Town context.</div></div>
+        <div class="act"><div class="act-icon">&#127869;</div><div class="act-name">Bree Street Food Scene</div><div class="act-tip">The Test Kitchen, Pot Luck Club, Shortmarket Club &mdash; book ahead</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Be at the cable car station 15 minutes before opening (8am in Jan). The summit at 8am is nearly crowd-free. Fog rolls in from the south by midday in January and can sock the summit in within minutes &mdash; go early or late afternoon (4pm light is extraordinary). The tablecloth effect is itself a shot, but plan for clear mornings first.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-gold">Table Mountain</span><span class="tg tg-gold">Street Photography</span><span class="tg tg-gold">Contemporary Art</span><span class="tg tg-gold">Nightlife</span>
       </div>
     </div>
   </div>
 
-  <!-- GARDEN ROUTE -->
-  <div class="phase-group" data-p="gr" id="sec-gr">
-    <div class="ph-hdr">
-      <div class="ph-dot"></div>
-      <h2 class="ph-title">Garden Route</h2>
-      <span class="ph-range">Feb 2–5 &middot; 4 Days</span>
-    </div>
-    <div class="ph-banner">
-      <img src="https://images.unsplash.com/photo-1548277539-cad9f7b687f0?w=1200&q=80&auto=format&fit=crop"
-        alt="Garden Route Knysna coast" loading="lazy" onerror="this.parentElement.style.background='#0d1a12'">
-      <span class="ph-banner-cap">The Heads &mdash; Knysna</span>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 07</span><span class="dc-date">Sun 2 Feb</span></div>
-        <div class="dc-loc">Cape Town <em class="arr">&#8594;</em> Hermanus <em class="arr">&#8594;</em> Knysna</div>
-        <p class="dc-note">Head east along the Whale Coast. The Hermanus cliff path above Walker Bay is exceptional — southern right whales breach below you in January. Continue east on the N2. Arrive Knysna for golden hour at The Heads: two massive sandstone cliffs guarding the lagoon.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1614531341773-3bff8b7cb3fc?w=1000&q=80&auto=format&fit=crop"
-            alt="Hermanus whale watching cliff ocean" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~450 km &middot; 5 hrs</span>
-          <span class="tg tg-gold">Hermanus Cliff Path</span>
-          <span class="tg tg-gold">Whale Watching</span>
-          <span class="tg tg-gold">Knysna Heads Sunset</span>
-        </div>
+  <!-- Day 4 -->
+  <div class="dc anim anim-d2">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 04</span><span class="dc-date">Thu 30 Jan</span></div>
+      <div class="dc-loc">Cape Peninsula Full Day</div>
+      <p class="dc-note">The greatest coastal drive in Africa. Chapman&rsquo;s Peak &mdash; seven kilometres of road blasted into sheer cliffs dropping straight into the Atlantic. Cape Point at the tip of the peninsula. Boulders Beach for African penguins on white sand. The whole loop is ~150km but delivers constantly.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1520250494-c79be5a9ef7e?w=1000&q=80&auto=format&fit=crop" alt="Chapman's Peak coastal drive Cape Peninsula" loading="lazy" onerror="this.parentElement.style.display='none'">
       </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 08</span><span class="dc-date">Mon 3 Feb</span></div>
-        <div class="dc-loc">Plettenberg Bay</div>
-        <p class="dc-note">The jewel of the Garden Route. Blue Flag beaches, warm Indian Ocean, and dolphins that come right into the bay in January. The Lookout Restaurant sits on the cliff above Lookout Beach with one of the finest coastal views in the country.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1000&q=80&auto=format&fit=crop"
-            alt="Plettenberg Bay blue ocean beach" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-gold">Lookout Beach</span>
-          <span class="tg tg-gold">Dolphin Watching</span>
-          <span class="tg tg-gold">The Lookout Restaurant</span>
-          <span class="tg tg-gold">Keurbooms Lagoon</span>
-        </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127937;</div><div class="act-name">Chapman&rsquo;s Peak Drive</div><div class="act-tip">Start at 7:30am sharp &mdash; beat the tour buses, toll opens at 7am</div></div>
+        <div class="act"><div class="act-icon">&#128676;</div><div class="act-name">Hout Bay Seal Island</div><div class="act-tip">30-min boat trip, 75,000 Cape fur seals on a sea stack &mdash; R150</div></div>
+        <div class="act"><div class="act-icon">&#128205;</div><div class="act-name">Cape of Good Hope Sign</div><div class="act-tip">The classic shot. Go early &mdash; by 10am tour buses crowd the sign</div></div>
+        <div class="act"><div class="act-icon">&#128269;</div><div class="act-name">Cape Point Lighthouse</div><div class="act-tip">Funicular or steep hike. The old lighthouse viewpoint is exceptional</div></div>
+        <div class="act"><div class="act-icon">&#127822;</div><div class="act-name">Boulders Beach Penguins</div><div class="act-tip">African penguins at close range. 2,500 birds. Go before 9am.</div></div>
+        <div class="act"><div class="act-icon">&#127869;</div><div class="act-name">Kalk Bay Harbour</div><div class="act-tip">Kalky&rsquo;s fish &amp; chips on the quay. Best in Cape Town, full stop.</div></div>
       </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 09</span><span class="dc-date">Tue 4 Feb</span></div>
-        <div class="dc-loc">Bloukrans Bungee + Tsitsikamma</div>
-        <p class="dc-note">World's highest commercial bungee at 216m off Bloukrans River Bridge — book online in advance. Then into Tsitsikamma: ancient yellowwood forest, rocky Indian Ocean coastline, and the Storms River gorge suspension bridge. One of the most photogenic places in South Africa.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1000&q=80&auto=format&fit=crop"
-            alt="Tsitsikamma ancient forest gorge" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-gold">Bloukrans Bungee — 216m</span>
-          <span class="tg tg-gold">Tsitsikamma NP</span>
-          <span class="tg tg-gold">Storms River Gorge</span>
-          <span class="tg tg-grey">Book ahead online</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 10</span><span class="dc-date">Wed 5 Feb</span></div>
-        <div class="dc-loc">Eastern Cape <em class="arr">&#8594;</em> Durban</div>
-        <p class="dc-note">Long drive north on the N2 through the Eastern Cape. Optional stop at Jeffrey's Bay — world-famous surf break, great coffee, vibrant beach town energy. Arrive Durban to warm air, the smell of curry, and the Indian Ocean at 28°C.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1455729552865-3658a5d39692?w=1000&q=80&auto=format&fit=crop"
-            alt="Surfing waves Eastern Cape coast" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~600 km &middot; 6–7 hrs</span>
-          <span class="tg tg-gold">Jeffrey's Bay Stop</span>
-          <span class="tg tg-gold">Supertubes Beach</span>
-          <span class="tg tg-gold">Arrive Durban</span>
-        </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Chapman&rsquo;s Peak faces west &mdash; morning light comes from behind you shooting southward. The cliffs are best shot from the north-facing lay-bys. Cape Point gets extraordinary light between 9&ndash;11am. Bring a 70&ndash;200mm for the penguins at Boulders &mdash; you can get very close but the compression makes the colony look massive.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~150 km loop</span>
+        <span class="tg tg-gold">Chapman&rsquo;s Peak</span><span class="tg tg-gold">Cape Point</span><span class="tg tg-gold">Penguins</span><span class="tg tg-gold">Scenic Drive</span>
       </div>
     </div>
   </div>
 
-  <!-- DURBAN -->
-  <div class="phase-group" data-p="dbn" id="sec-dbn">
-    <div class="ph-hdr">
-      <div class="ph-dot"></div>
-      <h2 class="ph-title">Durban &amp; KwaZulu-Natal</h2>
-      <span class="ph-range">Feb 6–9 &middot; 4 Days</span>
-    </div>
-    <div class="ph-banner">
-      <img src="https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=1200&q=80&auto=format&fit=crop"
-        alt="Durban beach Golden Mile" loading="lazy" onerror="this.parentElement.style.background='#1a1205'">
-      <span class="ph-banner-cap">Golden Mile &mdash; Durban</span>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 11</span><span class="dc-date">Thu 6 Feb</span></div>
-        <div class="dc-loc">uShaka Marine World &amp; Indian Quarter</div>
-        <p class="dc-note">Africa's largest marine theme park in the morning — incredible aquarium, shipwreck exhibit, dolphin shows. Afternoon deep into Durban's Indian heritage: Victoria Street Market, bunny chow on Grey Street, spice traders along Prince Edward. A city like nowhere else in SA.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1000&q=80&auto=format&fit=crop"
-            alt="Marine aquarium tropical fish" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-gold">uShaka Marine World</span>
-          <span class="tg tg-gold">Victoria Street Market</span>
-          <span class="tg tg-gold">Bunny Chow</span>
-          <span class="tg tg-gold">Indian Quarter</span>
-        </div>
+  <!-- Day 5 -->
+  <div class="dc anim anim-d1">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 05</span><span class="dc-date">Fri 31 Jan</span></div>
+      <div class="dc-loc">Stellenbosch &amp; Franschhoek</div>
+      <p class="dc-note">Into the Cape Winelands &mdash; one of the great food and wine regions of the world. Oak-lined streets, Cape Dutch manor houses, and estates that hold their own against anything in Bordeaux or Burgundy. Stellenbosch wine route in the morning, Franschhoek valley in the afternoon. January is harvest season: the estates are alive.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1000&q=80&auto=format&fit=crop" alt="Cape Winelands vineyard Stellenbosch" loading="lazy" onerror="this.parentElement.style.display='none'">
       </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 12</span><span class="dc-date">Fri 7 Feb</span></div>
-        <div class="dc-loc">iSimangaliso Wetland Park</div>
-        <p class="dc-note">Day trip north to St Lucia. UNESCO World Heritage Site — the only place on earth where rhinos share habitat with whale sharks. Book a sunrise estuary boat safari: hippos at close range are near-guaranteed. Cape Vidal beach inside the park for snorkelling.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=1000&q=80&auto=format&fit=crop"
-            alt="Hippos in African river wetland" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~2 hrs north of Durban</span>
-          <span class="tg tg-gold">Sunrise Hippo Boat Safari</span>
-          <span class="tg tg-gold">Cape Vidal Beach</span>
-          <span class="tg tg-gold">Snorkelling</span>
-          <span class="tg tg-gold">UNESCO Heritage</span>
-        </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127863;</div><div class="act-name">Tokara Estate</div><div class="act-tip">Top of Helshoogte Pass &mdash; incredible valley views, exceptional Chardonnay</div></div>
+        <div class="act"><div class="act-icon">&#128081;</div><div class="act-name">Delaire Graff Estate</div><div class="act-tip">Most beautiful estate in SA. Art collection + fine dining. Book ahead.</div></div>
+        <div class="act"><div class="act-icon">&#127866;</div><div class="act-name">Jordan Wine Estate</div><div class="act-tip">Dam-side restaurant with duck terrine. The Cobbler&rsquo;s best kept secret.</div></div>
+        <div class="act"><div class="act-icon">&#128650;</div><div class="act-name">Franschhoek Wine Tram</div><div class="act-tip">Hop-on hop-off tram through the valley. Bleu Route is the best. Book online.</div></div>
+        <div class="act"><div class="act-icon">&#127922;</div><div class="act-name">Haute Cabri&egrave;re</div><div class="act-tip">Dramatic mountain cave cellar. MCC pairing &mdash; bottomless bubbles + cheese</div></div>
+        <div class="act"><div class="act-icon">&#127963;</div><div class="act-name">La Motte Art Museum</div><div class="act-tip">Pierneef artworks in a Cape Dutch homestead &mdash; free with tasting</div></div>
       </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 13</span><span class="dc-date">Sat 8 Feb</span></div>
-        <div class="dc-loc">Hluhluwe-iMfolozi Game Reserve</div>
-        <p class="dc-note">Africa's oldest game reserve and the place that saved the white rhino from extinction. Self-drive game drives at dawn and dusk. Rhino, elephant, lion, leopard and buffalo all confirmed. 2WD is fine on the main tar roads. Fewer crowds than Kruger, same Big Five.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=1000&q=80&auto=format&fit=crop"
-            alt="White rhino African game reserve" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~2.5 hrs from Durban</span>
-          <span class="tg tg-gold">Big Five Self-Drive</span>
-          <span class="tg tg-gold">White Rhino</span>
-          <span class="tg tg-gold">Dawn Game Drive</span>
-          <span class="tg tg-grey">2WD Accessible</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 14</span><span class="dc-date">Sun 9 Feb</span></div>
-        <div class="dc-loc">Umhlanga &amp; Durban Nightlife</div>
-        <p class="dc-note">Last Durban day. Umhlanga Rocks — iconic lighthouse, Whalebone Pier, upmarket restaurants and warm water. Sunset from the pier is beautiful. Then Florida Road for Durban's best restaurants and nightlife before the inland push tomorrow.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1000&q=80&auto=format&fit=crop&crop=bottom"
-            alt="Umhlanga beach lighthouse KZN" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-gold">Umhlanga Rocks Beach</span>
-          <span class="tg tg-gold">Whalebone Pier Sunset</span>
-          <span class="tg tg-gold">Florida Road</span>
-          <span class="tg tg-gold">Durban Nightlife</span>
-        </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Tokara sits at the top of the Helshoogte Pass &mdash; the valley views from the terrace at golden hour are among the finest in the Western Cape. The vineyards below are at peak green in January (harvest begins late Feb). Franschhoek main street at dusk, with the Huguenot Memorial lit up, is a quiet, beautiful shot most people miss.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-gold">Wine Tasting</span><span class="tg tg-gold">Cape Dutch Architecture</span><span class="tg tg-gold">Fine Dining</span><span class="tg tg-gold">Wine Tram</span>
       </div>
     </div>
   </div>
 
-  <!-- DRAKENSBERG -->
-  <div class="phase-group" data-p="berg" id="sec-berg">
-    <div class="ph-hdr">
-      <div class="ph-dot"></div>
-      <h2 class="ph-title">Drakensberg &amp; Home</h2>
-      <span class="ph-range">Feb 10–12 &middot; 3 Days</span>
-    </div>
-    <div class="ph-banner">
-      <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=80&auto=format&fit=crop"
-        alt="Drakensberg Amphitheatre mountains" loading="lazy" onerror="this.parentElement.style.background='#13101a'">
-      <span class="ph-banner-cap">Royal Natal &mdash; Drakensberg</span>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 15</span><span class="dc-date">Mon 10 Feb</span></div>
-        <div class="dc-loc">Durban <em class="arr">&#8594;</em> Royal Natal NP</div>
-        <p class="dc-note">Drive inland. The shift from subtropical coast to mountain is dramatic. Royal Natal NP sits at the foot of the Amphitheatre — a 5km basalt cliff wall rising 1,100m from the valley floor. One of the great natural spectacles of Africa. Afternoon hike to the base of Tugela Falls.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=1000&q=80&auto=format&fit=crop"
-            alt="Dramatic basalt mountain amphitheatre" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~3.5 hrs from Durban</span>
-          <span class="tg tg-gold">Royal Natal NP</span>
-          <span class="tg tg-gold">The Amphitheatre</span>
-          <span class="tg tg-gold">Tugela Falls Hike</span>
-          <span class="tg tg-gold">Mountain Chalet</span>
-        </div>
+  <!-- Day 6 -->
+  <div class="dc anim anim-d2">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 06</span><span class="dc-date">Sat 1 Feb</span></div>
+      <div class="dc-loc">Cape Town Free Day</div>
+      <p class="dc-note">Slow morning, then pick your adventure. Lion&rsquo;s Head hike for the 360&deg; summit view of the peninsula, or the Sea Point rock pools. Camps Bay beach in the afternoon. Signal Hill for golden hour. Cape Town&rsquo;s nightlife on Bree Street or De Waterkant is genuinely world-class &mdash; don&rsquo;t miss it.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1592919505780-303950717480?w=1000&q=80&auto=format&fit=crop" alt="Camps Bay beach Cape Town sunset" loading="lazy" onerror="this.parentElement.style.display='none'">
       </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 16</span><span class="dc-date">Tue 11 Feb</span></div>
-        <div class="dc-loc">Full Day in the Drakensberg</div>
-        <p class="dc-note">Sunrise hike to the Amphitheatre face. Then the Gorge trail — mountain pools, cold fresh air, and a scale of landscape that makes you feel appropriately small. Golden-hour light on the basalt wall is extraordinary. January means lush green valleys and dramatic cloud formations building over the plateau by afternoon.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1000&q=80&auto=format&fit=crop"
-            alt="Mountain valley hiking landscape" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-gold">Amphitheatre Sunrise</span>
-          <span class="tg tg-gold">Gorge Trail</span>
-          <span class="tg tg-gold">Mountain Pools</span>
-          <span class="tg tg-gold">Golden Hour Photography</span>
-        </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127939;</div><div class="act-name">Lion&rsquo;s Head Hike</div><div class="act-tip">2.5hr circular. Start 4pm for golden hour at the 669m summit</div></div>
+        <div class="act"><div class="act-icon">&#127754;</div><div class="act-name">Sea Point Rock Pools</div><div class="act-tip">Free tidal pools along the promenade. Cool Atlantic morning swim.</div></div>
+        <div class="act"><div class="act-icon">&#127958;</div><div class="act-name">Clifton 4th Beach</div><div class="act-tip">The most beautiful city beach in the world. Arrive by 11am for a spot.</div></div>
+        <div class="act"><div class="act-icon">&#127932;</div><div class="act-name">Robben Island Ferry</div><div class="act-tip">Nelson Mandela&rsquo;s cell, former political prison &mdash; deeply moving 4hr tour</div></div>
+        <div class="act"><div class="act-icon">&#127770;</div><div class="act-name">Signal Hill Sunset</div><div class="act-tip">Park on Signal Hill Road at 6pm and watch the city go gold below you</div></div>
+        <div class="act"><div class="act-icon">&#127867;</div><div class="act-name">De Waterkant / Bree St</div><div class="act-tip">Orphanage Cocktail Emporium or Publik Wine Bar for world-class drinks</div></div>
       </div>
-    </div>
-
-    <div class="day-card">
-      <div class="dc-left"><div class="dc-node"></div><div class="dc-thread"></div></div>
-      <div class="dc-body">
-        <div class="dc-head"><span class="dc-num">Day 17</span><span class="dc-date">Wed 12 Feb</span></div>
-        <div class="dc-loc">Midlands Meander <em class="arr">&#8594;</em> Johannesburg</div>
-        <p class="dc-note">The perfect close. A gentle drive home through the KZN Midlands — rolling green hills, craft studios, cheese farms, fly-fishing rivers. A long farm lunch somewhere in Nottingham Road, then the N3 north. Home by evening. Cards full. Trip done.</p>
-        <div class="dc-img">
-          <img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&q=80&auto=format&fit=crop"
-            alt="Green rolling hills KZN Midlands" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="dc-tags">
-          <span class="tg tg-grey">~5 hrs total</span>
-          <span class="tg tg-gold">Midlands Meander</span>
-          <span class="tg tg-gold">Nottingham Road Farm Lunch</span>
-          <span class="tg tg-gold">Home — Johannesburg</span>
-        </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Lion&rsquo;s Head at sunset in January: the city below glows amber, the Atlantic goes rose-pink, and Table Mountain frames everything to the south-east. The 2.5hr circular hike has chains and ladders near the summit &mdash; exhilarating. Check the lunar calendar; the full moon hike is a Cape Town bucket-list experience.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-gold">Lion&rsquo;s Head Hike</span><span class="tg tg-gold">Clifton Beach</span><span class="tg tg-gold">Signal Hill Sunset</span><span class="tg tg-gold">Nightlife</span>
       </div>
     </div>
   </div>
+</div>
+
+<!-- === PHASE 3: GARDEN ROUTE === -->
+<div class="pg anim" data-p="gr" id="gr">
+  <div class="pg-hdr">
+    <div class="pg-hdr-left">
+      <div class="pg-eyebrow">Phase 03 &mdash; February 2&ndash;5</div>
+      <h2 class="pg-title">Garden Route</h2>
+    </div>
+    <span class="pg-range">4 Days &middot; ~1,600 km</span>
+  </div>
+
+  <div class="ph-img anim anim-d1">
+    <img src="https://images.unsplash.com/photo-1548277539-cad9f7b687f0?w=1400&q=80&auto=format&fit=crop" alt="Garden Route Knysna coast" loading="lazy" onerror="this.parentElement.style.background='#0d1a12'">
+    <span class="ph-img-cap">The Heads &mdash; Knysna Lagoon</span>
+  </div>
+
+  <!-- Day 7 -->
+  <div class="dc anim anim-d1">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 07</span><span class="dc-date">Sun 2 Feb</span></div>
+      <div class="dc-loc">Cape Town <em class="arr">&#8594;</em> Hermanus <em class="arr">&#8594;</em> Knysna</div>
+      <p class="dc-note">Head east along the Whale Coast. The cliff path above Walker Bay in Hermanus is extraordinary &mdash; southern right whales breach below you in January. The Hemel-en-Aarde valley just outside town has excellent wine stops. Continue east on the N2 through Swellendam and the Overberg. Arrive Knysna for golden hour at The Heads.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1614531341773-3bff8b7cb3fc?w=1000&q=80&auto=format&fit=crop" alt="Hermanus cliff path whale watching" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127930;</div><div class="act-name">Betty&rsquo;s Bay Penguins</div><div class="act-tip">Less visited than Boulders, equally special. 30min before Hermanus.</div></div>
+        <div class="act"><div class="act-icon">&#128051;</div><div class="act-name">Hermanus Cliff Path Walk</div><div class="act-tip">12km coastal path. Whales breach below in Jan. High tide = closest action.</div></div>
+        <div class="act"><div class="act-icon">&#128056;</div><div class="act-name">Walker Bay Whale Watching</div><div class="act-tip">Southern right whales year-round in Jan. Cliff views are free &mdash; boats too.</div></div>
+        <div class="act"><div class="act-icon">&#127863;</div><div class="act-name">Hemel-en-Aarde Valley Wine</div><div class="act-tip">Hamilton Russell Vineyards &mdash; best Pinot Noir in Africa. 15min from Hermanus.</div></div>
+        <div class="act"><div class="act-icon">&#127963;</div><div class="act-name">Stanford Village</div><div class="act-tip">Charming river village, 30min from Hermanus. Coffee at Mariana&rsquo;s.</div></div>
+        <div class="act"><div class="act-icon">&#127752;</div><div class="act-name">Knysna Heads Sunset</div><div class="act-tip">Drive up to the viewpoint above the eastern head. Golden hour is unmissable.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>The Hermanus cliff path faces north, so morning light comes from behind you shooting east. Check the tide tables &mdash; whales breach closest to the cliffs at high tide. Use a 400mm or longer to compress the whale spout against the cliff backdrop. The Knysna Heads at golden hour from the eastern headland road is one of the best single-shot locations on the Garden Route.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~450 km &middot; 5 hrs driving</span>
+        <span class="tg tg-gold">Whale Watching</span><span class="tg tg-gold">Cliff Path Walk</span><span class="tg tg-gold">Knysna Heads</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 8 -->
+  <div class="dc anim anim-d2">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 08</span><span class="dc-date">Mon 3 Feb</span></div>
+      <div class="dc-loc">Plettenberg Bay</div>
+      <p class="dc-note">The jewel of the Garden Route. Blue Flag beaches, warm Indian Ocean, and common dolphins that come right into the bay in January. The Robberg Nature Reserve peninsula hike is one of the best walks in SA &mdash; seal colony, dramatic cliffs, two oceans visible from the narrow neck. Don&rsquo;t skip it.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1000&q=80&auto=format&fit=crop" alt="Plettenberg Bay blue ocean beach" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127939;</div><div class="act-name">Robberg Peninsula Hike</div><div class="act-tip">3&ndash;4hr loop, seal colony, narrow ocean neck. Check tide tables. R60 entry.</div></div>
+        <div class="act"><div class="act-icon">&#127944;</div><div class="act-name">Lookout Beach</div><div class="act-tip">Best Blue Flag beach on the Garden Route. Dolphins swim past at 7am.</div></div>
+        <div class="act"><div class="act-icon">&#128676;</div><div class="act-name">Dolphin &amp; Whale Boat Cruise</div><div class="act-tip">2hr ocean cruise. Jan = dolphins guaranteed, whales frequent.</div></div>
+        <div class="act"><div class="act-icon">&#128048;</div><div class="act-name">Monkeyland</div><div class="act-tip">Free-roaming primates in forest sanctuary. 1hr guided walk &mdash; incredible.</div></div>
+        <div class="act"><div class="act-icon">&#128038;</div><div class="act-name">Birds of Eden Aviary</div><div class="act-tip">World&rsquo;s largest free-flight bird aviary under one dome. Next door to Monkeyland.</div></div>
+        <div class="act"><div class="act-icon">&#127748;</div><div class="act-name">Keurbooms Lagoon</div><div class="act-tip">Kayak 8km up the lagoon through forest &mdash; hire from Keurbooms River Ferry</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Robberg Peninsula is one of the great photography walks in South Africa. The narrow neck between two stretches of ocean &mdash; Indian Ocean both sides, cliffs above and below &mdash; is extraordinary at low tide when you can walk right out to the point. Bring a telephoto for the seal colony (hundreds of Cape fur seals, stacked) and a wide for the headland-to-headland shot.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-gold">Robberg Hike</span><span class="tg tg-gold">Dolphin Cruise</span><span class="tg tg-gold">Blue Flag Beach</span><span class="tg tg-gold">Wildlife Sanctuary</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 9 -->
+  <div class="dc anim anim-d1">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 09</span><span class="dc-date">Tue 4 Feb</span></div>
+      <div class="dc-loc">Bloukrans Bungee + Tsitsikamma</div>
+      <p class="dc-note">The most adrenaline-charged day of the trip. The world&rsquo;s highest commercial bungee jump at 216m off the Bloukrans River Bridge &mdash; even if you don&rsquo;t jump, the bridge arch walk is exhilarating. Then into Tsitsikamma: ancient yellowwood forest, a rocky Indian Ocean coastline, and the Storms River gorge suspension bridge.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1000&q=80&auto=format&fit=crop" alt="Tsitsikamma ancient forest river gorge" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#10071;</div><div class="act-name">Bloukrans Bungee &mdash; 216m</div><div class="act-tip">World&rsquo;s highest. ~R1,950. Book 48hrs ahead at faceadrenalin.co.za</div></div>
+        <div class="act"><div class="act-icon">&#128506;</div><div class="act-name">Bloukrans Bridge Walk</div><div class="act-tip">Non-jumper arch walk for the same views. ~R450. No strapping required.</div></div>
+        <div class="act"><div class="act-icon">&#127795;</div><div class="act-name">Tsitsikamma Yellowwood Forest</div><div class="act-tip">Ancient forest walk. Trees over 800 years old. Ethereal light through the canopy.</div></div>
+        <div class="act"><div class="act-icon">&#127747;</div><div class="act-name">Storms River Gorge Bridge</div><div class="act-tip">800m suspension bridge walk into the gorge. Opens 7am. Most dramatic at dawn.</div></div>
+        <div class="act"><div class="act-icon">&#127938;</div><div class="act-name">Big Swing Tsitsikamma</div><div class="act-tip">High-wire swing above the canopy &mdash; less extreme than bungee, equally thrilling</div></div>
+        <div class="act"><div class="act-icon">&#128675;</div><div class="act-name">Storms River Mouth Kayak</div><div class="act-tip">Kayak the last 2km of the river into the gorge mouth &mdash; dramatic walls, turquoise water</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>The Storms River gorge suspension bridge at dawn &mdash; mist rising from the gorge, yellowwood canopy on both sides, turquoise river below. The park opens at 7am; be at the gate at opening. The light through the ancient forest is extraordinary in the early morning &mdash; dappled, soft, dimensional. Bring a tripod for the slow-shutter gorge shots.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-gold">Bloukrans Bungee</span><span class="tg tg-gold">Tsitsikamma NP</span><span class="tg tg-gold">Gorge Bridge</span><span class="tg tg-gold">Kayaking</span>
+        <span class="tg tg-grey">Book ahead online</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 10 -->
+  <div class="dc anim anim-d2">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 10</span><span class="dc-date">Wed 5 Feb</span></div>
+      <div class="dc-loc">Eastern Cape <em class="arr">&#8594;</em> Durban</div>
+      <p class="dc-note">Long drive day north on the N2 through the Eastern Cape. The optional stop at Jeffrey&rsquo;s Bay is absolutely worth 2 hours &mdash; world-famous surf break, excellent coffee, and a particular laid-back energy that belongs nowhere else in SA. Arrive Durban to warm tropical air, the smell of curry drifting from every street, and the Indian Ocean at 28&deg;C.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1455729552865-3658a5d39692?w=1000&q=80&auto=format&fit=crop" alt="Surfing waves J-Bay Eastern Cape" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127940;</div><div class="act-name">Supertubes &mdash; Jeffrey&rsquo;s Bay</div><div class="act-tip">Watch world-class surfers on one of the best right-hand point breaks on earth</div></div>
+        <div class="act"><div class="act-icon">&#127863;</div><div class="act-name">J-Bay Coffee Scene</div><div class="act-tip">Walskipper or Stomping Grounds &mdash; genuinely excellent coffee in a surf town</div></div>
+        <div class="act"><div class="act-icon">&#127940;</div><div class="act-name">J-Bay Surf Museum</div><div class="act-tip">History of surfing in SA &mdash; unexpectedly brilliant. Free entry.</div></div>
+        <div class="act"><div class="act-icon">&#127958;</div><div class="act-name">Main Beach Walk</div><div class="act-tip">Palm-lined beachfront, warm Indian Ocean. Quick swim before the long drive.</div></div>
+        <div class="act"><div class="act-icon">&#127754;</div><div class="act-name">Arrive Durban Golden Mile</div><div class="act-tip">Indian Ocean at 28&deg;C. Drop bags, get straight in the water.</div></div>
+        <div class="act"><div class="act-icon">&#127829;</div><div class="act-name">First Bunny Chow</div><div class="act-tip">Durban&rsquo;s iconic Indian curry in a hollowed loaf. Govender&rsquo;s, Grey Street.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Supertubes at Jeffrey&rsquo;s Bay in January is peak surfing season. The right-hand point break peeling for 300+ metres is one of the world&rsquo;s most photographed waves. Bring your longest lens &mdash; 400mm minimum for shooting from the beach. The wave faces east, so morning light is ideal. Position yourself at the end of Point Road.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~600 km &middot; 6&ndash;7 hrs</span>
+        <span class="tg tg-gold">Jeffrey&rsquo;s Bay</span><span class="tg tg-gold">Supertubes</span><span class="tg tg-gold">Arrive Durban</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === PHASE 4: DURBAN === -->
+<div class="pg anim" data-p="dbn" id="dbn">
+  <div class="pg-hdr">
+    <div class="pg-hdr-left">
+      <div class="pg-eyebrow">Phase 04 &mdash; February 6&ndash;9</div>
+      <h2 class="pg-title">Durban &amp; KwaZulu-Natal</h2>
+    </div>
+    <span class="pg-range">4 Days &middot; Big Five + Ocean</span>
+  </div>
+
+  <div class="ph-img anim anim-d1">
+    <img src="https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=1400&q=80&auto=format&fit=crop" alt="Durban Golden Mile beach" loading="lazy" onerror="this.parentElement.style.background='#1a1205'">
+    <span class="ph-img-cap">Golden Mile &mdash; Durban, KwaZulu-Natal</span>
+  </div>
+
+  <!-- Day 11 -->
+  <div class="dc anim anim-d1">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 11</span><span class="dc-date">Thu 6 Feb</span></div>
+      <div class="dc-loc">uShaka Marine World &amp; Indian Quarter</div>
+      <p class="dc-note">Africa&rsquo;s largest marine theme park in the morning &mdash; a genuinely world-class aquarium built into the hull of a fake shipwreck. Afternoon deep into Durban&rsquo;s extraordinary Indian heritage: the Victoria Street Market, bunny chow on Grey Street, and the Moses Mabhida Stadium arch climb at golden hour for the best view in Durban.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1000&q=80&auto=format&fit=crop" alt="Marine aquarium tropical fish tank" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127920;</div><div class="act-name">uShaka Aquarium</div><div class="act-tip">Shark exhibit, shipwreck tunnels, touch pools. 3hrs minimum inside.</div></div>
+        <div class="act"><div class="act-icon">&#128053;</div><div class="act-name">Dolphin Shows</div><div class="act-tip">2 shows daily. The pool is enormous &mdash; front row gets wet.</div></div>
+        <div class="act"><div class="act-icon">&#127963;</div><div class="act-name">Moses Mabhida Arch Climb</div><div class="act-tip">187 steps to the arch apex. 360&deg; views. Golden hour = exceptional. R145.</div></div>
+        <div class="act"><div class="act-icon">&#127813;</div><div class="act-name">Victoria Street Market</div><div class="act-tip">300 stalls: spices, fabrics, Zulu beadwork, leather. Bargain hard.</div></div>
+        <div class="act"><div class="act-icon">&#127836;</div><div class="act-name">Bunny Chow</div><div class="act-tip">Govender&rsquo;s, Grey Street. Bean bunny for vegetarians. Lamb for the brave.</div></div>
+        <div class="act"><div class="act-icon">&#127867;</div><div class="act-name">Wilson&rsquo;s Wharf Sundowner</div><div class="act-tip">Harbour-side cocktails as the cargo ships come in. Excellent seafood too.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Moses Mabhida arch climb at golden hour gives you the single best panoramic shot in Durban &mdash; the entire beachfront, Golden Mile, and Indian Ocean lit warm below. Book the climb from 5:30pm in January for the light. The Victoria Street Market interior is richly photogenic &mdash; ask vendors before shooting, most are happy to pose.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-gold">uShaka Marine World</span><span class="tg tg-gold">Stadium Arch Climb</span><span class="tg tg-gold">Victoria St Market</span><span class="tg tg-gold">Indian Quarter</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 12 -->
+  <div class="dc anim anim-d2">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 12</span><span class="dc-date">Fri 7 Feb</span></div>
+      <div class="dc-loc">iSimangaliso Wetland Park</div>
+      <p class="dc-note">Day trip north to St Lucia. UNESCO World Heritage Site and one of Africa&rsquo;s most biodiverse ecosystems. The only place on earth where rhinos share habitat with whale sharks. January is peak turtle nesting season &mdash; a night turtle tour watching a leatherback turtle lay eggs is a once-in-a-lifetime experience. Book weeks ahead.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=1000&q=80&auto=format&fit=crop" alt="Hippos in African river wetland" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127966;</div><div class="act-name">Sunrise Hippo Boat Safari</div><div class="act-tip">5:30am estuary cruise. Hippos + crocs + birds + mist. Book at reception night before.</div></div>
+        <div class="act"><div class="act-icon">&#127884;</div><div class="act-name">Night Turtle Tour</div><div class="act-tip">Jan&ndash;Feb peak nesting. Leatherback and loggerhead turtles. Book weeks ahead.</div></div>
+        <div class="act"><div class="act-icon">&#127754;</div><div class="act-name">Cape Vidal Snorkelling</div><div class="act-tip">Coral reef inside the park. Warm water, sea turtles, tropical fish. 28&deg;C.</div></div>
+        <div class="act"><div class="act-icon">&#129428;</div><div class="act-name">Whale Shark Snorkel Tour</div><div class="act-tip">Jan can deliver whale sharks off Sodwana Bay. 2hr drive north of St Lucia.</div></div>
+        <div class="act"><div class="act-icon">&#127939;</div><div class="act-name">iSimangaliso Walking Trails</div><div class="act-tip">Guided walks with armed ranger through hippo and croc territory. Extraordinary.</div></div>
+        <div class="act"><div class="act-icon">&#128056;</div><div class="act-name">St Lucia Town Walk</div><div class="act-tip">Hippos wander the streets of St Lucia town at night. Not a joke.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>The sunrise estuary boat safari is among the most photogenic wildlife experiences in South Africa &mdash; thick mist on the water, hippos lifting their heads, pink light filtering through the mangroves. Bring a 70&ndash;200mm minimum. The night turtle tour is a totally different kind of shot: one headlamp, a leatherback turtle, and absolute silence. You&rsquo;ll never forget it.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~2 hrs north of Durban</span>
+        <span class="tg tg-gold">Hippo Boat Safari</span><span class="tg tg-gold">Turtle Nesting Tour</span><span class="tg tg-gold">Snorkelling</span><span class="tg tg-gold">UNESCO Heritage</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 13 -->
+  <div class="dc anim anim-d1">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 13</span><span class="dc-date">Sat 8 Feb</span></div>
+      <div class="dc-loc">Hluhluwe-iMfolozi Game Reserve</div>
+      <p class="dc-note">Africa&rsquo;s oldest proclaimed game reserve, and the place that single-handedly saved the white rhino from extinction. Self-drive on well-maintained tar roads, entering at gate-opening (5:30am). The Hluhluwe section (north) is lush and good for elephant, leopard and buffalo. The iMfolozi section (south) is more open and better for rhino and lion.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=1000&q=80&auto=format&fit=crop" alt="White rhino African safari game reserve" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#128337;</div><div class="act-name">Dawn Gate Entry &mdash; 5:30am</div><div class="act-tip">Be at the gate at opening. First hour of light = best game movement.</div></div>
+        <div class="act"><div class="act-icon">&#129421;</div><div class="act-name">White Rhino Tracking</div><div class="act-tip">iMfolozi section. The Memorial Gate loop is the best rhino road in SA.</div></div>
+        <div class="act"><div class="act-icon">&#129409;</div><div class="act-name">Lion Sightings</div><div class="act-tip">Ask rangers at the gate where lions were spotted that morning. Share info.</div></div>
+        <div class="act"><div class="act-icon">&#128024;</div><div class="act-name">Elephant Herds</div><div class="act-tip">Hluhluwe section north &mdash; family herds at waterholes by 9am.</div></div>
+        <div class="act"><div class="act-icon">&#128062;</div><div class="act-name">Leopard Watch</div><div class="act-tip">Hluhluwe section, wooded ridges. Dawn and dusk. Patience rewarded.</div></div>
+        <div class="act"><div class="act-icon">&#127964;</div><div class="act-name">Hilltop Camp Viewpoint</div><div class="act-tip">Have lunch at Hilltop Camp &mdash; the valley views over the reserve are exceptional</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>The golden hour light in Hluhluwe is extraordinary &mdash; acacia trees backlit, rhino silhouettes on the ridgeline, warm amber through the grass. A 400mm is the minimum for usable game shots from a vehicle. Photograph through the open window on a beanbag for stability. Early January mornings are crisp and the low light is exceptional for wildlife.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~2.5 hrs from Durban</span>
+        <span class="tg tg-gold">Big Five Self-Drive</span><span class="tg tg-gold">White Rhino</span><span class="tg tg-gold">Dawn Game Drive</span><span class="tg tg-grey">2WD Accessible</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 14 -->
+  <div class="dc anim anim-d2">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 14</span><span class="dc-date">Sun 9 Feb</span></div>
+      <div class="dc-loc">Umhlanga &amp; Durban Nightlife</div>
+      <p class="dc-note">Last Durban day &mdash; slow it down. Umhlanga Rocks has the iconic red lighthouse, the Whalebone Pier, and some of the best seafood restaurants on the KZN coast. Sunset from the pier is genuinely beautiful. Florida Road for dinner. Durban&rsquo;s nightlife scene punches well above its weight &mdash; a proper send-off before the mountains tomorrow.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1000&q=80&auto=format&fit=crop&crop=bottom" alt="Umhlanga beach lighthouse pier sunset KZN" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127769;</div><div class="act-name">Umhlanga Sunrise Walk</div><div class="act-tip">Golden hour at the promenade before the crowds. Lighthouse facing east = perfect.</div></div>
+        <div class="act"><div class="act-icon">&#9961;</div><div class="act-name">Whalebone Pier</div><div class="act-tip">Walk to the end at high tide. The pier faces east &mdash; sunrise here is spectacular.</div></div>
+        <div class="act"><div class="act-icon">&#127958;</div><div class="act-name">Ballito Beach</div><div class="act-tip">30min north of Umhlanga. Quieter, rockier, beautiful tidal pools at low tide.</div></div>
+        <div class="act"><div class="act-icon">&#127869;</div><div class="act-name">Ile Maurice Restaurant</div><div class="act-tip">Best seafood in Umhlanga. Mauritian-Indian fusion. Book two days ahead.</div></div>
+        <div class="act"><div class="act-icon">&#127867;</div><div class="act-name">Florida Road Strip</div><div class="act-tip">Durban&rsquo;s best restaurant mile: Havana, 9th Avenue Bistro, Tashas</div></div>
+        <div class="act"><div class="act-icon">&#127926;</div><div class="act-name">Durban Nightlife</div><div class="act-tip">Village Walk or Point precinct. Durban club culture has deep roots in house music.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Umhlanga Rocks at sunrise before the beach crowds is quietly magical &mdash; the red lighthouse in warm first light, the warm Indian Ocean behind, pelicans on the pier. Set the alarm for 5am. Then return at golden hour (7:30pm) for the sunset light on the lighthouse face and the palm-lined promenade.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-gold">Umhlanga Lighthouse</span><span class="tg tg-gold">Whalebone Pier</span><span class="tg tg-gold">Florida Road</span><span class="tg tg-gold">Durban Nightlife</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === PHASE 5: DRAKENSBERG === -->
+<div class="pg anim" data-p="berg" id="berg">
+  <div class="pg-hdr">
+    <div class="pg-hdr-left">
+      <div class="pg-eyebrow">Phase 05 &mdash; February 10&ndash;12</div>
+      <h2 class="pg-title">Drakensberg &amp; Home</h2>
+    </div>
+    <span class="pg-range">3 Days &middot; Mountains</span>
+  </div>
+
+  <div class="ph-img anim anim-d1">
+    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1400&q=80&auto=format&fit=crop" alt="Drakensberg Amphitheatre mountains" loading="lazy" onerror="this.parentElement.style.background='#13101a'">
+    <span class="ph-img-cap">Royal Natal National Park &mdash; Drakensberg</span>
+  </div>
+
+  <!-- Day 15 -->
+  <div class="dc anim anim-d1">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 15</span><span class="dc-date">Mon 10 Feb</span></div>
+      <div class="dc-loc">Durban <em class="arr">&#8594;</em> Royal Natal NP</div>
+      <p class="dc-note">Drive inland on the N3. The shift from subtropical coast to mountain is one of the most dramatic transitions in southern Africa. Royal Natal National Park sits at the base of the Amphitheatre &mdash; a 5km basalt cliff wall rising 1,100m from the valley floor. Stop at Howick Falls on the way; it&rsquo;s one of the most beautiful waterfalls in the country.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=1000&q=80&auto=format&fit=crop" alt="Dramatic basalt mountain amphitheatre wall" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#128116;</div><div class="act-name">Howick Falls</div><div class="act-tip">67m waterfall, 30min off the N3. The gorge is beautiful, faces east &mdash; go morning.</div></div>
+        <div class="act"><div class="act-icon">&#127965;</div><div class="act-name">Midlands Preview Stop</div><div class="act-tip">Rawdon&rsquo;s Hotel in Nottingham Road &mdash; craft beer + farm lunch preview</div></div>
+        <div class="act"><div class="act-icon">&#127775;</div><div class="act-name">Amphitheatre Viewpoint</div><div class="act-tip">Drive to the Royal Natal viewpoint &mdash; first sight of the 5km basalt wall.</div></div>
+        <div class="act"><div class="act-icon">&#127939;</div><div class="act-name">Tugela Falls Base Hike</div><div class="act-tip">4km, 2 hrs. World&rsquo;s 2nd highest waterfall. The gorge photography is extraordinary.</div></div>
+        <div class="act"><div class="act-icon">&#127968;</div><div class="act-name">Thendele Camp Check-in</div><div class="act-tip">SANParks chalets at the base of the Amphitheatre. Book far in advance.</div></div>
+        <div class="act"><div class="act-icon">&#127752;</div><div class="act-name">Amphitheatre Sundowner</div><div class="act-tip">Sit on the chalet stoep and watch the basalt wall go from orange to purple.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Howick Falls faces east &mdash; best light in the morning with the sun behind you. The gorge below is dramatic and often photographed from above, but descending to the base (steep path) gives you a completely different shot. Tugela Falls from the base of the gorge: use a wide angle and long shutter on a tripod to capture the cascade against the basalt cliff. The scale is staggering.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~3.5 hrs from Durban</span>
+        <span class="tg tg-gold">Howick Falls</span><span class="tg tg-gold">Royal Natal NP</span><span class="tg tg-gold">Tugela Falls Hike</span><span class="tg tg-gold">Mountain Chalet</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 16 -->
+  <div class="dc anim anim-d2">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 16</span><span class="dc-date">Tue 11 Feb</span></div>
+      <div class="dc-loc">Full Day in the Drakensberg</div>
+      <p class="dc-note">Dawn at the Amphitheatre face, then a full day in the mountains. The Gorge Trail takes you 8km deep into the basalt wall &mdash; mountain pools, cold clear streams, and a sense of scale that makes everything feel small. January means lush green valleys and dramatic afternoon thunderstorm clouds that build and break over the plateau. The photography is relentless.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1000&q=80&auto=format&fit=crop" alt="Mountain valley hiking landscape Drakensberg" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127774;</div><div class="act-name">Amphitheatre Sunrise</div><div class="act-tip">Pre-dawn hike to the face. The first rays on the 5km cliff are extraordinary.</div></div>
+        <div class="act"><div class="act-icon">&#127939;</div><div class="act-name">Gorge Trail (8km)</div><div class="act-tip">Full day hike into the Amphitheatre gorge. Chain ladders near the top. Bring layers.</div></div>
+        <div class="act"><div class="act-icon">&#128694;</div><div class="act-name">Mountain Pools Swimming</div><div class="act-tip">Cold, clear, deep. After 10km of mountain trails, the most deserved swim in SA.</div></div>
+        <div class="act"><div class="act-icon">&#127795;</div><div class="act-name">San Rock Paintings</div><div class="act-tip">Bushman rock art sites inside Royal Natal. Guided walks available at camp.</div></div>
+        <div class="act"><div class="act-icon">&#9928;</div><div class="act-name">Thunderstorm Photography</div><div class="act-tip">Set up in shelter at 3pm. Jan storms are spectacular &mdash; lightning on the escarpment.</div></div>
+        <div class="act"><div class="act-icon">&#127963;</div><div class="act-name">Cascades Trail (Easier)</div><div class="act-tip">Gentler 6km option if the Gorge is too much. Beautiful waterfall finale.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>Bring your widest lens for the Amphitheatre &mdash; nothing in your bag captures the full 5km scale of the wall. The afternoon thunderstorms over the Drakensberg in January are some of the most dramatic weather photography in southern Africa. Set up in a sheltered spot by 3pm and wait. When sun breaks through storm clouds onto the basalt face at 5pm, the light is indescribable.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-gold">Amphitheatre Dawn</span><span class="tg tg-gold">Gorge Trail</span><span class="tg tg-gold">Mountain Swimming</span><span class="tg tg-gold">San Rock Art</span><span class="tg tg-gold">Storm Photography</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 17 -->
+  <div class="dc anim anim-d1">
+    <div class="dc-left"><div class="dc-node"></div><div class="dc-line"></div></div>
+    <div class="dc-body">
+      <div class="dc-meta"><span class="dc-num">Day 17</span><span class="dc-date">Wed 12 Feb</span></div>
+      <div class="dc-loc">Midlands Meander <em class="arr">&#8594;</em> Johannesburg</div>
+      <p class="dc-note">The perfect way to close the loop. A gentle drive home through the KZN Midlands &mdash; rolling green hills, craft studios, cheese farms, fly-fishing rivers, and a long unhurried farm lunch. The Midlands has a quiet, green beauty that most people drive straight through on the N3. Take your time. Then up the highway and home by evening. Cards full. Trip done.</p>
+      <div class="dc-img">
+        <img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&q=80&auto=format&fit=crop" alt="Rolling green hills KZN Midlands Meander" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="acts-label">Things to Do</div>
+      <div class="acts-strip">
+        <div class="act"><div class="act-icon">&#127869;</div><div class="act-name">Rawdon&rsquo;s Hotel Lunch</div><div class="act-tip">Farm-style restaurant in Nottingham Road. Craft beer brewed on site. Excellent.</div></div>
+        <div class="act"><div class="act-icon">&#127848;</div><div class="act-name">Swissland Cheese Farm</div><div class="act-tip">Award-winning artisan cheese made on the farm. 20 varieties. Buy for the road.</div></div>
+        <div class="act"><div class="act-icon">&#127950;</div><div class="act-name">Midlands Pottery Studios</div><div class="act-tip">Ardmore Ceramic Art &mdash; extraordinary hand-painted Zulu-themed ceramics</div></div>
+        <div class="act"><div class="act-icon">&#127916;</div><div class="act-name">Howick Village Coffee</div><div class="act-tip">The Old Courthouse Bistro for a final flat white before the N3 home</div></div>
+        <div class="act"><div class="act-icon">&#127939;</div><div class="act-name">Albert Falls Dam Walk</div><div class="act-tip">Quick nature walk with valley views &mdash; 30min, right off the R103</div></div>
+        <div class="act"><div class="act-icon">&#127968;</div><div class="act-name">Johannesburg Home</div><div class="act-tip">N3 north from Hilton. Home by 7pm. Cards full. Loop complete.</div></div>
+      </div>
+      <div class="photo-note"><span class="pn-lbl">Photographer&rsquo;s Note</span><p>The Midlands morning mist lifts from the valleys around 9am in January. The rolling green hills with morning fog burning off are quietly beautiful &mdash; a gentle, unexpected final chapter after the drama of the Drakensberg. The R103 through the Meander is slower than the N3 but the light on the valley farms in the morning is worth the extra 20 minutes.</p></div>
+      <div class="dc-tags">
+        <span class="tg tg-grey">~5 hrs total</span>
+        <span class="tg tg-gold">Midlands Meander</span><span class="tg tg-gold">Artisan Cheese Farm</span><span class="tg tg-gold">Farm Lunch</span><span class="tg tg-gold">Home &mdash; JHB</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 </main>
 
 <footer>
-  <div class="ft-route">
-    JHB <span>&#8594;</span> Karoo <span>&#8594;</span> Cape Town <span>&#8594;</span>
-    Garden Route <span>&#8594;</span> Durban <span>&#8594;</span> Drakensberg <span>&#8594;</span> JHB
-  </div>
-  <div class="ft-note">January – February 2027</div>
+  <div class="ft-r">JHB <span>&#8594;</span> Karoo <span>&#8594;</span> Cape Town <span>&#8594;</span> Garden Route <span>&#8594;</span> Durban <span>&#8594;</span> Drakensberg <span>&#8594;</span> JHB</div>
+  <div class="ft-n">January &ndash; February 2027</div>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-const PC = { dep:'#7A7570', ct:'#6B9BB8', gr:'#5A8C6A', dbn:'#C8A86B', berg:'#8A7A9A' };
+// LOADER
+window.addEventListener('load',()=>{setTimeout(()=>{const l=document.getElementById('loader');l.classList.add('gone');setTimeout(()=>l.remove(),700)},1200)});
 
-const map = L.map('map', {
-  center: [-30.5, 25.5], zoom: 6,
-  zoomControl: true, scrollWheelZoom: false, attributionControl: false
+// HERO ANIM
+setTimeout(()=>{
+  document.querySelector('.hero-bg').classList.add('loaded');
+  document.querySelector('.hero-eyebrow').classList.add('vis');
+  document.querySelector('.hero h1').classList.add('vis');
+  document.querySelector('.hero-stats').classList.add('vis');
+},200);
+
+// CURSOR
+const cur=document.getElementById('cur'), ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function anim(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(anim)})();
+document.querySelectorAll('a,button,.pn,.act,.dc-node').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.classList.add('hovering');ring.classList.add('hovering')});
+  el.addEventListener('mouseleave',()=>{cur.classList.remove('hovering');ring.classList.remove('hovering')});
 });
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19, subdomains: 'abcd'
-}).addTo(map);
+// PROGRESS BAR
+const prog=document.getElementById('prog');
+window.addEventListener('scroll',()=>{
+  const s=document.documentElement.scrollTop, h=document.documentElement.scrollHeight-window.innerHeight;
+  prog.style.width=(s/h*100)+'%';
+},{ passive:true });
 
-L.control.attribution({ prefix: '&copy; <a href="https://carto.com/attributions">CartoDB</a> &copy; <a href="https://openstreetmap.org/copyright">OSM</a>' }).addTo(map);
+// SCROLL ANIMATIONS
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')})},{threshold:.08,rootMargin:'0px 0px -32px 0px'});
+document.querySelectorAll('.anim').forEach(el=>obs.observe(el));
 
-const stops = [
-  { lat:-26.2041, lng:28.0473,  p:'dep',  day:0,  name:'Johannesburg',          note:'Departure — fuel up and hit the N1 before dawn.' },
-  { lat:-33.2301, lng:20.5789,  p:'dep',  day:1,  name:'Matjiesfontein',         note:'Victorian ghost town. Zero light pollution — Milky Way photography.' },
-  { lat:-33.9249, lng:18.4241,  p:'ct',   day:2,  name:'Cape Town',              note:'Arrive via Hex River Valley. Camps Bay sunset.' },
-  { lat:-33.9669, lng:18.4255,  p:'ct',   day:3,  name:'Table Mountain',         note:'Cable car at dawn. 360° views of both oceans.' },
-  { lat:-34.0883, lng:18.3594,  p:'ct',   day:4,  name:"Chapman's Peak",         note:'Greatest coastal drive in Africa. Every lookout is a shot.' },
-  { lat:-34.3508, lng:18.4846,  p:'ct',   day:4,  name:'Cape Point',             note:'Peninsula tip. Funicular to the old lighthouse.' },
-  { lat:-34.1986, lng:18.4534,  p:'ct',   day:4,  name:'Boulders Beach',         note:'African penguins on white sand. Go early.' },
-  { lat:-33.9379, lng:18.8634,  p:'ct',   day:5,  name:'Stellenbosch',           note:'Wine route — Delaire Graff, Tokara, Spier.' },
-  { lat:-33.9142, lng:19.1357,  p:'ct',   day:5,  name:'Franschhoek',            note:'Haute Cabrière above the valley. MCC pairing.' },
-  { lat:-34.4187, lng:19.2345,  p:'gr',   day:7,  name:'Hermanus',               note:'Cliff path above Walker Bay. Whales breach below in January.' },
-  { lat:-34.0359, lng:23.0456,  p:'gr',   day:7,  name:'Knysna Heads',           note:'Two sandstone cliffs guarding the lagoon. Golden hour is unmissable.' },
-  { lat:-34.0524, lng:23.3680,  p:'gr',   day:8,  name:'Plettenberg Bay',        note:'Dolphins right in the bay. Blue Flag beach.' },
-  { lat:-33.9653, lng:23.6475,  p:'gr',   day:9,  name:'Bloukrans Bridge',       note:"World's highest commercial bungee — 216m. Book ahead." },
-  { lat:-34.0118, lng:24.0165,  p:'gr',   day:9,  name:'Tsitsikamma NP',         note:'Ancient forest + Storms River gorge suspension bridge.' },
-  { lat:-34.0522, lng:24.9297,  p:'gr',   day:10, name:"Jeffrey's Bay",          note:'World-famous surf break. Great coffee, vibrant town.' },
-  { lat:-29.8587, lng:31.0218,  p:'dbn',  day:10, name:'Durban',                 note:'Golden Mile. Indian Ocean at 28°C. Bunny chow.' },
-  { lat:-29.8672, lng:31.0459,  p:'dbn',  day:11, name:'uShaka Marine World',    note:"Africa's largest marine theme park + aquarium." },
-  { lat:-27.6361, lng:32.5825,  p:'dbn',  day:12, name:'iSimangaliso',           note:'Sunrise hippo boat safari. UNESCO World Heritage.' },
-  { lat:-28.2198, lng:31.9519,  p:'dbn',  day:13, name:'Hluhluwe-iMfolozi',      note:"Africa's oldest game reserve. White rhino + Big Five." },
-  { lat:-29.7142, lng:31.0928,  p:'dbn',  day:14, name:'Umhlanga Rocks',         note:'Lighthouse, Whalebone Pier. Florida Road nightlife.' },
-  { lat:-28.7037, lng:28.9203,  p:'berg', day:15, name:'Royal Natal NP',         note:'The Amphitheatre — 5km basalt wall, 1,100m rise.' },
-  { lat:-29.3156, lng:30.0491,  p:'berg', day:17, name:'Midlands Meander',       note:'Rolling green hills, cheese farms, farm lunch.' },
-  { lat:-26.2041, lng:28.0473,  p:'dep',  day:17, name:'Johannesburg — Home',    note:'Cards full. Trip done.' }
+// PHASE NAV SCROLL
+function go(id){document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'})}
+
+// MAP
+const PC={dep:'#7A7570',ct:'#6B9BB8',gr:'#5A8C6A',dbn:'#C8A86B',berg:'#8A7A9A'};
+const map=L.map('map',{center:[-30.5,25.5],zoom:6,zoomControl:true,scrollWheelZoom:false,attributionControl:false});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(map);
+L.control.attribution({prefix:'&copy; <a href="https://carto.com/attributions">CartoDB</a> &copy; <a href="https://openstreetmap.org/copyright">OSM</a>'}).addTo(map);
+
+const stops=[
+  {lat:-26.2041,lng:28.0473,p:'dep',day:0, name:'Johannesburg',        note:'Departure point. Fill up and hit the N1 before dawn.'},
+  {lat:-33.2301,lng:20.5789,p:'dep',day:1, name:'Matjiesfontein',       note:'Victorian ghost town. Bortle Class 2 skies &mdash; world-class stargazing.'},
+  {lat:-33.9249,lng:18.4241,p:'ct', day:2, name:'Cape Town',            note:'Arrive via Hex River Valley. First stop: Camps Bay sunset.'},
+  {lat:-33.9669,lng:18.4255,p:'ct', day:3, name:'Table Mountain',       note:'Cable car at opening or hike Platteklip. 360&deg; views of both oceans.'},
+  {lat:-34.0883,lng:18.3594,p:'ct', day:4, name:"Chapman's Peak",       note:"Greatest coastal drive in Africa. Every lay-by is a shot."},
+  {lat:-34.3508,lng:18.4846,p:'ct', day:4, name:'Cape Point',           note:'Tip of the peninsula. Old lighthouse + Cape of Good Hope sign.'},
+  {lat:-34.1986,lng:18.4534,p:'ct', day:4, name:'Boulders Beach',       note:'2,500 African penguins on white sand. Go before 9am.'},
+  {lat:-33.9379,lng:18.8634,p:'ct', day:5, name:'Stellenbosch',         note:'Wine route &mdash; Tokara, Delaire Graff, Jordan.'},
+  {lat:-33.9142,lng:19.1357,p:'ct', day:5, name:'Franschhoek',          note:'Wine Tram (Bleu route) + Haute Cabri&egrave;re + La Motte.'},
+  {lat:-34.4187,lng:19.2345,p:'gr', day:7, name:'Hermanus',             note:'Cliff path above Walker Bay. Whales breach below in January.'},
+  {lat:-34.0359,lng:23.0456,p:'gr', day:7, name:'Knysna Heads',         note:'Two sandstone cliffs guarding the lagoon. Golden hour is unmissable.'},
+  {lat:-34.0524,lng:23.3680,p:'gr', day:8, name:'Plettenberg Bay',      note:'Robberg Peninsula hike + Lookout Beach + dolphin boat cruise.'},
+  {lat:-33.9653,lng:23.6475,p:'gr', day:9, name:'Bloukrans Bridge',     note:"World's highest commercial bungee &mdash; 216m. Book ahead."},
+  {lat:-34.0118,lng:24.0165,p:'gr', day:9, name:'Tsitsikamma NP',       note:'Ancient yellowwood forest + Storms River gorge suspension bridge.'},
+  {lat:-34.0522,lng:24.9297,p:'gr', day:10,name:"Jeffrey's Bay",        note:'Supertubes world surf break. Watch from Point Road at dawn.'},
+  {lat:-29.8587,lng:31.0218,p:'dbn',day:10,name:'Durban',               note:'Indian Ocean at 28&deg;C. Bunny chow. Moses Mabhida arch climb at golden hour.'},
+  {lat:-29.8672,lng:31.0459,p:'dbn',day:11,name:'uShaka Marine World',  note:"Africa's largest marine park &mdash; shipwreck aquarium + dolphin shows."},
+  {lat:-27.6361,lng:32.5825,p:'dbn',day:12,name:'iSimangaliso',         note:'Sunrise hippo boat safari + turtle nesting tours (Jan peak season).'},
+  {lat:-28.2198,lng:31.9519,p:'dbn',day:13,name:'Hluhluwe-iMfolozi',   note:"Africa's oldest game reserve &mdash; saved the white rhino from extinction."},
+  {lat:-29.7142,lng:31.0928,p:'dbn',day:14,name:'Umhlanga Rocks',       note:'Lighthouse, Whalebone Pier, best seafood on the KZN coast.'},
+  {lat:-28.7037,lng:28.9203,p:'berg',day:15,name:'Royal Natal NP',      note:'The Amphitheatre &mdash; 5km basalt wall rising 1,100m. Tugela Falls hike.'},
+  {lat:-29.3156,lng:30.0491,p:'berg',day:17,name:'Midlands Meander',    note:'Cheese farms, artisan studios, farm lunch. Gentle close to the loop.'},
+  {lat:-26.2041,lng:28.0473,p:'dep', day:17,name:'Johannesburg &mdash; Home',note:'Cards full. 5,500km complete. Loop done.'}
 ];
 
-// Draw phase-coloured route segments
-const segs = [
-  [0,1,'dep'],[1,2,'dep'],[2,8,'ct'],[8,10,'gr'],[10,14,'gr'],
-  [14,15,'gr'],[15,19,'dbn'],[19,21,'berg'],[21,22,'dep']
+const segs=[
+  [0,1,'dep'],[1,2,'dep'],[2,8,'ct'],[8,9,'gr'],[9,11,'gr'],
+  [11,14,'gr'],[14,15,'gr'],[15,19,'dbn'],[19,20,'berg'],[20,21,'berg'],[21,22,'dep']
 ];
-segs.forEach(([a,b,p]) => {
-  const coords = stops.slice(a, b+1).map(s => [s.lat, s.lng]);
-  L.polyline(coords, { color: PC[p], weight: 2.5, opacity: 0.72, dashArray: '7 5' }).addTo(map);
+segs.forEach(([a,b,p])=>{
+  const coords=stops.slice(a,b+1).map(s=>[s.lat,s.lng]);
+  L.polyline(coords,{color:PC[p],weight:2.5,opacity:.72,dashArray:'7 5'}).addTo(map);
 });
 
-// Add markers
-stops.forEach((s, i) => {
-  const isHome = i === 0 || i === stops.length - 1;
-  const m = L.circleMarker([s.lat, s.lng], {
-    radius: isHome ? 8 : 5,
-    fillColor: isHome ? '#C8A86B' : PC[s.p],
-    color: '#0C0C0C', weight: 2, opacity: 1, fillOpacity: 0.92
-  }).addTo(map);
-
-  const dl = s.day === 0 ? 'Start' : s.day === 17 && i === stops.length-1 ? 'End' : `Day ${String(s.day).padStart(2,'0')}`;
-  m.bindPopup(`<div class="pop-inner"><span class="pop-day">${dl}</span><div class="pop-name">${s.name}</div><div class="pop-note">${s.note}</div></div>`, { maxWidth:260, minWidth:200 });
-  m.on('mouseover', function(){ this.openPopup(); });
+stops.forEach((s,i)=>{
+  const home=i===0||i===stops.length-1;
+  const m=L.circleMarker([s.lat,s.lng],{radius:home?8:5,fillColor:home?'#C8A86B':PC[s.p],color:'#070707',weight:2,opacity:1,fillOpacity:.95}).addTo(map);
+  const dl=s.day===0?'Start':s.day===17&&i===stops.length-1?'End':'Day '+String(s.day).padStart(2,'0');
+  m.bindPopup('<div class="pop-in"><span class="pop-day">'+dl+'</span><div class="pop-name">'+s.name+'</div><div class="pop-note">'+s.note+'</div></div>',{maxWidth:260,minWidth:200});
+  m.on('mouseover',function(){this.openPopup()});
 });
 
-// Enable scroll zoom only after interaction
-map.on('click', () => map.scrollWheelZoom.enable());
-document.getElementById('map').addEventListener('mouseleave', () => map.scrollWheelZoom.disable());
-
-function scroll2(id) { document.getElementById(id).scrollIntoView({ behavior:'smooth' }); }
+map.on('click',()=>map.scrollWheelZoom.enable());
+document.getElementById('map').addEventListener('mouseleave',()=>map.scrollWheelZoom.disable());
 </script>
 </body>
 </html>
